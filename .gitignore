@@ -1,2 +1,15 @@
 .env
 downloads/
+.claude/
+
+# backend
+backend/.venv/
+backend/data/*.db
+backend/downloads/*
+!backend/downloads/.gitkeep
+backend/.env
+
+# frontend
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
