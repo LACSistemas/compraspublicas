@@ -3,6 +3,7 @@ import logging
 import os
 import time
 
+from .filtro_documentos import filtrar_documentos
 from .fonte_portal import FontePortal, _sanitize_filename, mapear_processo
 
 logger = logging.getLogger("scraper")
@@ -51,12 +52,20 @@ def executar_scraping(
             andamento_resp = fonte.listar_chat(cod)
             andamento = andamento_resp.get("frasesChat", []) if andamento_resp else []
 
+            documentos_mantidos, documentos_descartados = filtrar_documentos(documentos)
+            if documentos_descartados:
+                nomes = [d.get("nome", "") for d in documentos_descartados]
+                logger.info(
+                    f"  {len(documentos_mantidos)} docs relevantes, "
+                    f"{len(documentos_descartados)} descartados: {nomes}"
+                )
+
             slug = _slug_do_processo(item.get("urlReferencia", str(cod)))
             pasta = os.path.join(pasta_downloads_base, slug)
             os.makedirs(pasta, exist_ok=True)
 
             arquivos_baixados = []
-            for doc in documentos:
+            for doc in documentos_mantidos:
                 if not doc.get("idArquivo"):
                     continue
                 nome = doc.get("nome", f"documento_{doc['idArquivo'][:8]}")
@@ -73,7 +82,10 @@ def executar_scraping(
                 except Exception as e:
                     logger.warning(f"  Falha ao baixar '{nome}': {e}")
 
-            processo = mapear_processo(item, detalhe, itens_resp, documentos, arquivos_baixados, andamento)
+            processo = mapear_processo(
+                item, detalhe, itens_resp, documentos_mantidos,
+                arquivos_baixados, andamento, documentos_descartados,
+            )
             resultado["processos"].append(processo)
 
             time.sleep(0.3)

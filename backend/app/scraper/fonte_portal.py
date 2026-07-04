@@ -123,6 +123,7 @@ def mapear_processo(
     documentos: list,
     arquivos_baixados: list,
     andamento: list = None,
+    documentos_descartados: list = None,
 ) -> dict:
     url_ref = lista_item.get("urlReferencia", "")
     url_publica = f"https://www.portaldecompraspublicas.com.br/processos{url_ref}"
@@ -202,5 +203,6 @@ def mapear_processo(
         "itens": itens,
         "andamento": andamento or [],
         "arquivos_baixados": arquivos_baixados,
+        "documentos_descartados": [d.get("nome", "") for d in (documentos_descartados or [])],
         "conteudo_bruto": json.dumps(detalhe, ensure_ascii=False)[:50000],
     }
