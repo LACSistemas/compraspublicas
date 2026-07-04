@@ -16,9 +16,9 @@ Três insumos foram fornecidos:
   (estilo `Nivel2`, a suprimir no final), Anexo I (Mapeamento de Riscos) e Anexo II (Matriz
   de Alocação), riscos em tabelas repetíveis.
 - **Lei 14.133/2021** (`.docx`, ~69k tokens) — fonte de verdade federal.
-- **Decreto 5352-R/2023** (`.pdf`, ~17,6k tokens) — fonte de verdade estadual (arts. 15-26
-  regem o ETP). ⚠️ O arquivo veio nomeado "5766"; o conteúdo é o **5352-R/2023**. Confirmar
-  qual norma é a vigente antes de fixar como fonte de verdade.
+- **Decreto 5352-R/2023** (`.pdf`, ~17,6k tokens) — fonte de verdade estadual **confirmada**
+  (arts. 15-26 regem o ETP). O arquivo foi rotulado "5766" por engano; a norma vigente e a
+  fonte de verdade é o **5352-R/2023**.
 
 ## Arquitetura — 3 camadas (separação forma × conteúdo × verdade)
 
@@ -105,17 +105,28 @@ Criar `backend/prompts/prompt_etp.md` (não reaproveitar `prompt.md`, que é aud
 - Frontend: botão **"Gerar ETP (rascunho)"**, aviso visível "Rascunho para revisão humana —
   confira e complete os campos [A PREENCHER] antes de entregar", e botão de download.
 
-## TR (Termo de Referência)
+## TR (Termo de Referência) — sem template oficial por enquanto
 
-Mesmo motor, template + schema próprios. **Falta o modelo `.docx` do TR do ES** — só o ETP
-foi fornecido. O Decreto 5352-R define os requisitos do TR (a partir do art. ~27). Quando
-você enviar o template `.docx` do TR, replico: `template_tr.docx` + `prompt_tr.md` + schema.
-Até lá, o plano cobre o ETP ponta a ponta e deixa o TR como extensão pendente do template.
+Decisão: **gerar o TR já agora, sem o template `.docx` do ES** (que será fornecido depois).
+As camadas 1 (fontes de verdade) e 2 (prompt/schema) são construídas normalmente; só a
+camada 3 usa, provisoriamente, um documento **genérico** em vez do template oficial.
+
+- **Camada 2**: criar `prompt_tr.md` + schema do TR com base nos requisitos do TR do
+  **Decreto 5352-R** (a partir do art. ~27) e da Lei 14.133. Mesmas regras anti-alucinação.
+- **Camada 3 (provisória)**: renderizar o conteúdo num `.docx` simples via `python-docx`
+  (títulos de seção + texto), sem cabeçalho/rodapé/Ecofont do ES. Marcar visivelmente
+  "MINUTA PROVISÓRIA — sem formatação oficial".
+- **Quando o template oficial chegar**: adicionar `template_tr.docx` e trocar o renderizador
+  genérico pelo `docxtpl` — o `prompt_tr.md` e o schema já prontos não mudam. A troca fica
+  isolada na camada 3.
+
+Assim o TR não fica bloqueado pela falta do modelo, e a forma oficial entra depois sem
+retrabalho de prompt/schema.
 
 ## Riscos e decisões em aberto
 
-1. **Identidade do decreto**: arquivo "5766" com conteúdo "5352-R/2023". Confirmar a norma
-   vigente — ela é a fonte de verdade.
+1. **Identidade do decreto**: resolvido — a fonte de verdade é o **Decreto 5352-R/2023**
+   (o rótulo "5766" do arquivo é engano). Sem pendência.
 2. **LLM/caching**: manter Gemini (já em uso) e usar seu context caching; alternativa é Claude
    com prompt caching. A escolha muda o `gemini_service.py`, não a arquitetura.
 3. **Fontes que mudam**: versionar + recriar o cache; teste de hash alerta divergência.
