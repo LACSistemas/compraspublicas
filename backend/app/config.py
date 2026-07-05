@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     DOWNLOADS_DIR: str = "downloads"
     CORS_ORIGINS: str = "http://localhost:3000"
     FONTE_DADOS: str = "portal"
-    GEMINI_MODEL_GERACAO: str = "gemini-1.5-flash-001"
+    GEMINI_MODEL_GERACAO: str = ""
     GERACOES_DIR: str = "geracoes"
     FONTES_VERDADE_DIR: str = "fontes_verdade"
 

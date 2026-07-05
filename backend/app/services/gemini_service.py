@@ -185,7 +185,7 @@ def criar_ou_recuperar_cache() -> str | None:
     try:
         textos = obter_textos_fontes_verdade()
         cache = client.caches.create(
-            model=settings.GEMINI_MODEL_GERACAO,
+            model=(settings.GEMINI_MODEL_GERACAO or settings.GEMINI_MODEL),
             config=types.CreateCachedContentConfig(
                 contents=[textos],
                 ttl="3600s",
@@ -214,7 +214,7 @@ def chamar_gemini_geracao(prompt_geracao: str) -> dict:
     try:
         if cache_name:
             response = client.models.generate_content(
-                model=settings.GEMINI_MODEL_GERACAO,
+                model=(settings.GEMINI_MODEL_GERACAO or settings.GEMINI_MODEL),
                 contents=prompt_geracao,
                 config=types.GenerateContentConfig(
                     cached_content=cache_name,
@@ -229,7 +229,7 @@ def chamar_gemini_geracao(prompt_geracao: str) -> dict:
                 f"---\n\n{prompt_geracao}"
             )
             response = client.models.generate_content(
-                model=settings.GEMINI_MODEL_GERACAO,
+                model=(settings.GEMINI_MODEL_GERACAO or settings.GEMINI_MODEL),
                 contents=prompt_com_fontes,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
@@ -245,7 +245,7 @@ def chamar_gemini_geracao(prompt_geracao: str) -> dict:
             f"---\n\n{prompt_geracao}"
         )
         response = client.models.generate_content(
-            model=settings.GEMINI_MODEL_GERACAO,
+            model=(settings.GEMINI_MODEL_GERACAO or settings.GEMINI_MODEL),
             contents=prompt_com_fontes,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",

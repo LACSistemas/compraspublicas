@@ -75,7 +75,7 @@ def executar_geracao(geracao_id: int, pesquisa_id: int, params: dict):
         geracao.status = "completo"
         geracao.resultado_json = json.dumps(resultado, ensure_ascii=False)
         geracao.arquivo_gerado = destino
-        geracao.modelo_gemini = settings.GEMINI_MODEL_GERACAO
+        geracao.modelo_gemini = settings.GEMINI_MODEL_GERACAO or settings.GEMINI_MODEL
         db.commit()
 
     except Exception as e:
