@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { AnaliseTriggerButton } from "@/components/analise-trigger-button";
+import { EtpGeracaoCard } from "@/components/etp-geracao-card";
 import { ConteudoBrutoViewer } from "@/components/conteudo-bruto-viewer";
 import { DocumentosLista } from "@/components/documentos-lista";
 import { PesquisaStatusCard } from "@/components/pesquisa-status-card";
@@ -115,6 +116,8 @@ export default function PesquisaDetalhePage({
         </div>
         <AnaliseTriggerButton pesquisaId={pesquisaId} />
       </div>
+
+      <EtpGeracaoCard pesquisaId={pesquisaId} />
 
       <Tabs defaultValue="dados-organizados">
         <TabsList>

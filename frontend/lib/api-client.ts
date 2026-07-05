@@ -1,6 +1,9 @@
 import type {
   Analise,
   AnaliseCreateResponse,
+  Geracao,
+  GeracaoCreatePayload,
+  GeracaoCreateResponse,
   Pesquisa,
   PesquisaCreatePayload,
   PesquisaDetalhe,
@@ -50,4 +53,22 @@ export function dispararAnalise(id: number): Promise<AnaliseCreateResponse> {
 
 export function getAnalise(id: number): Promise<Analise> {
   return request<Analise>(`/pesquisas/${id}/analise`);
+}
+
+export function gerarETP(
+  pesquisaId: number,
+  payload: GeracaoCreatePayload,
+): Promise<GeracaoCreateResponse> {
+  return request<GeracaoCreateResponse>(`/pesquisas/${pesquisaId}/etp`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getGeracaoETP(pesquisaId: number, tipo = "etp"): Promise<Geracao> {
+  return request<Geracao>(`/pesquisas/${pesquisaId}/etp?tipo=${tipo}`);
+}
+
+export function getUrlDownloadETP(pesquisaId: number, tipo = "etp"): string {
+  return `${API_URL}/pesquisas/${pesquisaId}/etp/download?tipo=${tipo}`;
 }

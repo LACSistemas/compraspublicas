@@ -168,3 +168,30 @@ export interface AnaliseCreateResponse {
   analise_id: number;
   status: string;
 }
+
+export type StatusGeracao = "pendente" | "em_andamento" | "completo" | "erro";
+
+export interface Geracao {
+  id: number;
+  tipo: string;
+  status: StatusGeracao;
+  erro_mensagem?: string | null;
+  pendencias?: string[] | null;
+  arquivo_disponivel: boolean;
+  resultado?: Record<string, unknown> | null;
+  modelo_gemini?: string | null;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface GeracaoCreatePayload {
+  tipo: "etp" | "tr";
+  un_gestora: string;
+  responsaveis: string;
+  objeto_resumido?: string | null;
+}
+
+export interface GeracaoCreateResponse {
+  geracao_id: number;
+  status: string;
+}

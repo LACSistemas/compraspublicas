@@ -22,6 +22,9 @@ class Pesquisa(Base):
     analises = relationship(
         "Analise", back_populates="pesquisa", cascade="all, delete-orphan"
     )
+    geracoes = relationship(
+        "Geracao", back_populates="pesquisa", cascade="all, delete-orphan"
+    )
 
 
 class Analise(Base):
@@ -37,3 +40,20 @@ class Analise(Base):
     atualizado_em = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     pesquisa = relationship("Pesquisa", back_populates="analises")
+
+
+class Geracao(Base):
+    __tablename__ = "geracoes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    pesquisa_id = Column(Integer, ForeignKey("pesquisas.id"), nullable=False)
+    tipo = Column(String, nullable=False, default="etp")
+    status = Column(String, nullable=False, default="pendente")
+    erro_mensagem = Column(Text, nullable=True)
+    resultado_json = Column(Text, nullable=True)
+    arquivo_gerado = Column(String, nullable=True)
+    modelo_gemini = Column(String, nullable=True)
+    criado_em = Column(DateTime, server_default=func.now())
+    atualizado_em = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    pesquisa = relationship("Pesquisa", back_populates="geracoes")

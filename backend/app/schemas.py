@@ -49,3 +49,28 @@ class AnaliseStatusOut(BaseModel):
     modelo_gemini: str | None = None
 
     model_config = {"from_attributes": True}
+
+
+class GeracaoCreate(BaseModel):
+    tipo: str = "etp"
+    un_gestora: str
+    responsaveis: str
+    objeto_resumido: str | None = None
+
+
+class GeracaoStatusOut(BaseModel):
+    id: int
+    tipo: str
+    status: str
+    erro_mensagem: str | None = None
+    pendencias: list[str] | None = None
+    arquivo_disponivel: bool = False
+
+    model_config = {"from_attributes": True}
+
+
+class GeracaoDetailOut(GeracaoStatusOut):
+    resultado: dict | None = None
+    modelo_gemini: str | None = None
+    criado_em: datetime
+    atualizado_em: datetime

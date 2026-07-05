@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import Base, engine
-from app.routers import analises, pesquisas
+from app.routers import analises, geracoes, pesquisas
 
 # Garante que logger.info(...) dos services (tokens gastos, progresso do scraping etc.)
 # apareça no console do uvicorn — sem isso, só os loggers "uvicorn.*" têm handler.
@@ -29,4 +29,5 @@ app.add_middleware(
 )
 
 app.include_router(pesquisas.router)
-app.include_router(analises.router)  # endpoints reais a partir da Fase 6
+app.include_router(analises.router)
+app.include_router(geracoes.router)

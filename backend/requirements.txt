@@ -10,3 +10,5 @@ pdf2image
 Pillow
 google-genai
 python-dotenv
+docxtpl
+python-docx
