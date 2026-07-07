@@ -5,10 +5,20 @@ from docxtpl import DocxTemplate
 
 BACKEND_DIR = Path(__file__).parent.parent.parent
 TEMPLATE_ETP = BACKEND_DIR / "templates" / "template_etp.docx"
+TEMPLATE_TR = BACKEND_DIR / "templates" / "template_tr.docx"
 
 
 def gerar_etp(conteudo: dict, destino: str) -> str:
     doc = DocxTemplate(str(TEMPLATE_ETP))
+    doc.render(conteudo)
+    doc.save(destino)
+    return destino
+
+
+def gerar_tr(conteudo: dict, destino: str) -> str:
+    if not TEMPLATE_TR.exists():
+        return gerar_tr_provisorio(conteudo, destino)
+    doc = DocxTemplate(str(TEMPLATE_TR))
     doc.render(conteudo)
     doc.save(destino)
     return destino

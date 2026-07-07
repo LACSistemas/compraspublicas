@@ -7,7 +7,7 @@ from app.config import settings
 from app.database import SessionLocal
 from app.models import Geracao, Pesquisa
 from app.services.gemini_service import chamar_gemini_geracao
-from app.services.gerador_documento import gerar_etp, gerar_tr_provisorio
+from app.services.gerador_documento import gerar_etp, gerar_tr
 from app.services.pdf_extractor import extrair_textos_da_pasta
 
 logger = logging.getLogger("gerador_etp_service")
@@ -66,7 +66,7 @@ def executar_geracao(geracao_id: int, pesquisa_id: int, params: dict):
         if tipo == "etp":
             gerar_etp(resultado, destino)
         else:
-            gerar_tr_provisorio(resultado, destino)
+            gerar_tr(resultado, destino)
 
         logger.info(f"Documento gerado: {destino}")
 

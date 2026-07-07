@@ -108,7 +108,7 @@ export function EtpGeracaoCard({ pesquisaId }: Props) {
                 className="w-48 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
               >
                 <option value="etp">ETP — Estudo Técnico Preliminar</option>
-                <option value="tr">TR — Termo de Referência (minuta)</option>
+                <option value="tr">TR — Termo de Referência (PGE)</option>
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
