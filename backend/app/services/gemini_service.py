@@ -57,9 +57,18 @@ def montar_prompt_final(
 
 
 def _extrair_json_da_resposta(texto: str) -> dict:
+    texto = texto.strip()
     try:
         return json.loads(texto)
     except json.JSONDecodeError:
+        # "Extra data" — modelo retornou JSON válido seguido de conteúdo extra
+        try:
+            obj, _ = json.JSONDecoder().raw_decode(texto)
+            if isinstance(obj, dict):
+                return obj
+        except json.JSONDecodeError:
+            pass
+        # Bloco ```json ... ```
         match = re.search(r"```json\s*(.*?)\s*```", texto, re.DOTALL)
         if match:
             return json.loads(match.group(1))
