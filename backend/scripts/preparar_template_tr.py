@@ -60,22 +60,46 @@ def _sub_inline(p, tag: str) -> bool:
 
 
 def _processar_tabela_itens(tbl):
-    """Converte Tabela 0 (itens) em loop docxtpl row-loop e remove linhas extras."""
-    if len(tbl.rows) < 2:
-        return 0
-    row1 = tbl.rows[1]
-    cells = row1.cells
-    if len(cells) >= 6:
-        _set_celula(cells[0], "{%tr for it in itens %}{{ it.numero }}")
-        _set_celula(cells[1], "{{ it.descricao }}")
-        _set_celula(cells[2], "{{ it.unidade }}")
-        _set_celula(cells[3], "{{ it.quantidade }}")
-        _set_celula(cells[4], "{{ it.valor_unitario_max }}")
-        _set_celula(cells[5], "{{ it.valor_total }}{%tr endfor %}")
-    # Remove linhas de exemplo (2, 3, 4)
-    for row in list(tbl.rows)[2:]:
+    """Converte Tabela 0 (itens) em loop docxtpl usando 3 linhas separadas.
+
+    docxtpl substitui a linha que contém {%tr for %} pelo bloco Jinja {% for %}
+    e a linha que contém {%tr endfor %} pelo {% endfor %}.  Os dois tags precisam
+    estar em linhas DISTINTAS; a linha do meio é o template repetível.
+
+    Estrutura após o processamento:
+      header
+      linha A  → {%tr for it in itens %}     (vira {% for it in itens %})
+      linha B  → {{ it.numero }} … etc.       (linha repetida para cada item)
+      linha C  → {%tr endfor %}               (vira {% endfor %})
+    """
+    rows = tbl.rows
+    if len(rows) < 4:
+        return  # precisa de header + pelo menos 3 linhas de dados
+
+    campos = [
+        "{{ it.numero }}",
+        "{{ it.descricao }}",
+        "{{ it.unidade }}",
+        "{{ it.quantidade }}",
+        "{{ it.valor_unitario_max }}",
+        "{{ it.valor_total }}",
+    ]
+
+    # Linha 1 → início do loop (só cell[0] com tag; demais vazias)
+    for ci, cell in enumerate(rows[1].cells):
+        _set_celula(cell, "{%tr for it in itens %}" if ci == 0 else "")
+
+    # Linha 2 → conteúdo repetível
+    for ci, cell in enumerate(rows[2].cells):
+        _set_celula(cell, campos[ci] if ci < len(campos) else "")
+
+    # Linha 3 → fim do loop
+    for ci, cell in enumerate(rows[3].cells):
+        _set_celula(cell, "{%tr endfor %}" if ci == 0 else "")
+
+    # Deletar linhas extras (índice 4+)
+    for row in list(tbl.rows)[4:]:
         row._element.getparent().remove(row._element)
-    return len(tbl.rows)
 
 
 def _set_celula(cell, novo: str):
