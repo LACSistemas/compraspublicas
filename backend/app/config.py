@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     GEMINI_MODEL_GERACAO: str = ""
     GERACOES_DIR: str = "geracoes"
     FONTES_VERDADE_DIR: str = "fontes_verdade"
+    SECRET_KEY: str = ""
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    OWNER_EMAIL: str = ""
+    OWNER_PASSWORD: str = ""
 
     model_config = SettingsConfigDict(env_file=".env")
 

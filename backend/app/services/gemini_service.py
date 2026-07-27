@@ -2,12 +2,15 @@ import json
 import logging
 import os
 import re
+from collections import namedtuple
 from pathlib import Path
 
 from google import genai
 from google.genai import types
 
 from app.config import settings
+
+TokenInfo = namedtuple("TokenInfo", ["input", "output", "total", "modelo"])
 
 logger = logging.getLogger("gemini_service")
 
@@ -85,7 +88,7 @@ def contar_tokens_input(prompt: str) -> int:
     return resposta.total_tokens
 
 
-def chamar_gemini(prompt: str) -> dict:
+def chamar_gemini(prompt: str) -> tuple[dict, TokenInfo]:
     client = _client()
 
     tokens_input = contar_tokens_input(prompt)
@@ -106,6 +109,12 @@ def chamar_gemini(prompt: str) -> dict:
     )
 
     uso = response.usage_metadata
+    token_info = TokenInfo(
+        input=uso.prompt_token_count if uso else 0,
+        output=uso.candidates_token_count if uso else 0,
+        total=uso.total_token_count if uso else 0,
+        modelo=settings.GEMINI_MODEL,
+    )
     if uso is not None:
         logger.info(
             f"Tokens reais da chamada — input: {uso.prompt_token_count:,} | "
@@ -119,7 +128,7 @@ def chamar_gemini(prompt: str) -> dict:
             f"Provavelmente cortada por max_output_tokens ou bloqueada por safety."
         )
 
-    return _extrair_json_da_resposta(response.text)
+    return _extrair_json_da_resposta(response.text), token_info
 
 
 def resumir_documento(nome_arquivo: str, texto: str) -> str:
@@ -212,18 +221,20 @@ def criar_ou_recuperar_cache() -> str | None:
         return None
 
 
-def chamar_gemini_geracao(prompt_geracao: str) -> dict:
+def chamar_gemini_geracao(prompt_geracao: str) -> tuple[dict, TokenInfo]:
     """
     Chama Gemini para geração de ETP/TR.
     Tenta usar cache; se falhar, injeta fontes inline.
+    Retorna (resultado_dict, TokenInfo).
     """
     client = _client()
+    modelo = settings.GEMINI_MODEL_GERACAO or settings.GEMINI_MODEL
     cache_name = criar_ou_recuperar_cache()
 
     try:
         if cache_name:
             response = client.models.generate_content(
-                model=(settings.GEMINI_MODEL_GERACAO or settings.GEMINI_MODEL),
+                model=modelo,
                 contents=prompt_geracao,
                 config=types.GenerateContentConfig(
                     cached_content=cache_name,
@@ -238,7 +249,7 @@ def chamar_gemini_geracao(prompt_geracao: str) -> dict:
                 f"---\n\n{prompt_geracao}"
             )
             response = client.models.generate_content(
-                model=(settings.GEMINI_MODEL_GERACAO or settings.GEMINI_MODEL),
+                model=modelo,
                 contents=prompt_com_fontes,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
@@ -246,7 +257,6 @@ def chamar_gemini_geracao(prompt_geracao: str) -> dict:
                 ),
             )
     except Exception as e:
-        # Fallback: sem cache, injeta inline
         logger.warning(f"Falha na chamada com cache, tentando inline: {e}")
         fontes = obter_textos_fontes_verdade()
         prompt_com_fontes = (
@@ -254,7 +264,7 @@ def chamar_gemini_geracao(prompt_geracao: str) -> dict:
             f"---\n\n{prompt_geracao}"
         )
         response = client.models.generate_content(
-            model=(settings.GEMINI_MODEL_GERACAO or settings.GEMINI_MODEL),
+            model=modelo,
             contents=prompt_com_fontes,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -263,6 +273,12 @@ def chamar_gemini_geracao(prompt_geracao: str) -> dict:
         )
 
     uso = response.usage_metadata
+    token_info = TokenInfo(
+        input=uso.prompt_token_count if uso else 0,
+        output=uso.candidates_token_count if uso else 0,
+        total=uso.total_token_count if uso else 0,
+        modelo=modelo,
+    )
     if uso is not None:
         logger.info(
             f"[geracao] tokens — input: {uso.prompt_token_count:,} | "
@@ -275,7 +291,23 @@ def chamar_gemini_geracao(prompt_geracao: str) -> dict:
             f"{response.candidates[0].finish_reason if response.candidates else None})"
         )
 
-    return _extrair_json_da_resposta(response.text)
+    return _extrair_json_da_resposta(response.text), token_info
+
+
+def salvar_uso_tokens(db, usuario_id: int, tipo: str, token_info: TokenInfo, referencia_id: int | None = None):
+    """Persiste o consumo de tokens de uma chamada Gemini no banco de dados."""
+    from app.models import UsoTokens  # import local para evitar ciclo
+    uso = UsoTokens(
+        usuario_id=usuario_id,
+        tipo=tipo,
+        tokens_input=token_info.input,
+        tokens_output=token_info.output,
+        tokens_total=token_info.total,
+        modelo=token_info.modelo,
+        referencia_id=referencia_id,
+    )
+    db.add(uso)
+    db.commit()
 
 
 def resumir_textos_pdfs(textos_pdfs: dict) -> dict:

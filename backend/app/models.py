@@ -1,14 +1,46 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
 
 
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, nullable=False, index=True)
+    nome = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    is_active = Column(Boolean, nullable=False, default=False)
+    is_owner = Column(Boolean, nullable=False, default=False)
+    criado_em = Column(DateTime, server_default=func.now())
+
+    pesquisas = relationship("Pesquisa", back_populates="usuario")
+    uso_tokens = relationship("UsoTokens", back_populates="usuario")
+
+
+class UsoTokens(Base):
+    __tablename__ = "uso_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    tipo = Column(String, nullable=False)  # pesquisa | analise | etp | tr
+    tokens_input = Column(Integer, nullable=True)
+    tokens_output = Column(Integer, nullable=True)
+    tokens_total = Column(Integer, nullable=True)
+    modelo = Column(String, nullable=True)
+    referencia_id = Column(Integer, nullable=True)
+    criado_em = Column(DateTime, server_default=func.now())
+
+    usuario = relationship("Usuario", back_populates="uso_tokens")
+
+
 class Pesquisa(Base):
     __tablename__ = "pesquisas"
 
     id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     termo_busca = Column(String, nullable=False)
     quantidade_desejada = Column(String, nullable=True)
     limite_processos = Column(Integer, nullable=False)
@@ -19,6 +51,7 @@ class Pesquisa(Base):
     criado_em = Column(DateTime, server_default=func.now())
     atualizado_em = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
+    usuario = relationship("Usuario", back_populates="pesquisas")
     analises = relationship(
         "Analise", back_populates="pesquisa", cascade="all, delete-orphan"
     )

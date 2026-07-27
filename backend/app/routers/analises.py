@@ -3,8 +3,9 @@ import json
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.auth import get_active_user
 from app.database import get_db
-from app.models import Analise, Pesquisa
+from app.models import Analise, Pesquisa, Usuario
 from app.schemas import AnaliseStatusOut
 from app.services.job_runner import iniciar_job_analise
 
@@ -12,8 +13,16 @@ router = APIRouter(tags=["analises"])
 
 
 @router.post("/pesquisas/{pesquisa_id}/analise", status_code=202)
-def criar_analise(pesquisa_id: int, db: Session = Depends(get_db)):
-    pesquisa = db.query(Pesquisa).filter(Pesquisa.id == pesquisa_id).first()
+def criar_analise(
+    pesquisa_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_active_user),
+):
+    pesquisa = (
+        db.query(Pesquisa)
+        .filter(Pesquisa.id == pesquisa_id, Pesquisa.usuario_id == current_user.id)
+        .first()
+    )
     if pesquisa is None:
         raise HTTPException(status_code=404, detail="Pesquisa não encontrada")
     if pesquisa.status != "completo":
@@ -34,13 +43,25 @@ def criar_analise(pesquisa_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(analise)
 
-    iniciar_job_analise(analise.id, pesquisa_id)
+    iniciar_job_analise(analise.id, pesquisa_id, current_user.id)
 
     return {"analise_id": analise.id, "status": analise.status}
 
 
 @router.get("/pesquisas/{pesquisa_id}/analise", response_model=AnaliseStatusOut)
-def obter_analise(pesquisa_id: int, db: Session = Depends(get_db)):
+def obter_analise(
+    pesquisa_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_active_user),
+):
+    pesquisa = (
+        db.query(Pesquisa)
+        .filter(Pesquisa.id == pesquisa_id, Pesquisa.usuario_id == current_user.id)
+        .first()
+    )
+    if pesquisa is None:
+        raise HTTPException(status_code=404, detail="Pesquisa não encontrada")
+
     analise = (
         db.query(Analise)
         .filter(Analise.pesquisa_id == pesquisa_id)

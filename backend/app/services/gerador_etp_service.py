@@ -6,7 +6,7 @@ from pathlib import Path
 from app.config import settings
 from app.database import SessionLocal
 from app.models import Geracao, Pesquisa
-from app.services.gemini_service import chamar_gemini_geracao
+from app.services.gemini_service import chamar_gemini_geracao, salvar_uso_tokens
 from app.services.gerador_documento import gerar_etp, gerar_tr
 from app.services.pdf_extractor import extrair_textos_da_pasta
 
@@ -28,7 +28,7 @@ def _montar_prompt(tipo: str, dados_processo: str, params: dict) -> str:
     )
 
 
-def executar_geracao(geracao_id: int, pesquisa_id: int, params: dict):
+def executar_geracao(geracao_id: int, pesquisa_id: int, params: dict, usuario_id: int):
     db = SessionLocal()
     try:
         pesquisa = db.query(Pesquisa).filter(Pesquisa.id == pesquisa_id).first()
@@ -56,7 +56,7 @@ def executar_geracao(geracao_id: int, pesquisa_id: int, params: dict):
         prompt = _montar_prompt(tipo, dados_processo, params)
 
         logger.info(f"Chamando Gemini para geração de {tipo.upper()} (geracao_id={geracao_id})")
-        resultado = chamar_gemini_geracao(prompt)
+        resultado, token_info = chamar_gemini_geracao(prompt)
 
         geracoes_dir = _BACKEND_DIR / settings.GERACOES_DIR / str(geracao_id)
         geracoes_dir.mkdir(parents=True, exist_ok=True)
@@ -70,12 +70,12 @@ def executar_geracao(geracao_id: int, pesquisa_id: int, params: dict):
 
         logger.info(f"Documento gerado: {destino}")
 
-        pendencias = resultado.get("pendencias", [])
+        salvar_uso_tokens(db, usuario_id, tipo, token_info, referencia_id=geracao_id)
 
         geracao.status = "completo"
         geracao.resultado_json = json.dumps(resultado, ensure_ascii=False)
         geracao.arquivo_gerado = destino
-        geracao.modelo_gemini = settings.GEMINI_MODEL_GERACAO or settings.GEMINI_MODEL
+        geracao.modelo_gemini = token_info.modelo
         db.commit()
 
     except Exception as e:

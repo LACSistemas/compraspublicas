@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from app.auth import get_active_user
 from app.database import get_db
-from app.models import Geracao, Pesquisa
+from app.models import Geracao, Pesquisa, Usuario
 from app.schemas import GeracaoCreate, GeracaoDetailOut, GeracaoStatusOut
 from app.services.job_runner import iniciar_job_geracao
 
@@ -18,8 +19,13 @@ def criar_geracao(
     pesquisa_id: int,
     payload: GeracaoCreate,
     db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_active_user),
 ):
-    pesquisa = db.query(Pesquisa).filter(Pesquisa.id == pesquisa_id).first()
+    pesquisa = (
+        db.query(Pesquisa)
+        .filter(Pesquisa.id == pesquisa_id, Pesquisa.usuario_id == current_user.id)
+        .first()
+    )
     if pesquisa is None:
         raise HTTPException(status_code=404, detail="Pesquisa não encontrada")
     if pesquisa.status != "completo":
@@ -54,7 +60,7 @@ def criar_geracao(
         "responsaveis": payload.responsaveis,
         "objeto_resumido": payload.objeto_resumido,
     }
-    iniciar_job_geracao(geracao.id, pesquisa_id, params)
+    iniciar_job_geracao(geracao.id, pesquisa_id, params, current_user.id)
 
     return {"geracao_id": geracao.id, "status": geracao.status}
 
@@ -64,7 +70,16 @@ def obter_geracao(
     pesquisa_id: int,
     tipo: str = "etp",
     db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_active_user),
 ):
+    pesquisa = (
+        db.query(Pesquisa)
+        .filter(Pesquisa.id == pesquisa_id, Pesquisa.usuario_id == current_user.id)
+        .first()
+    )
+    if pesquisa is None:
+        raise HTTPException(status_code=404, detail="Pesquisa não encontrada")
+
     geracao = (
         db.query(Geracao)
         .filter(Geracao.pesquisa_id == pesquisa_id, Geracao.tipo == tipo)
@@ -102,7 +117,16 @@ def download_geracao(
     pesquisa_id: int,
     tipo: str = "etp",
     db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_active_user),
 ):
+    pesquisa = (
+        db.query(Pesquisa)
+        .filter(Pesquisa.id == pesquisa_id, Pesquisa.usuario_id == current_user.id)
+        .first()
+    )
+    if pesquisa is None:
+        raise HTTPException(status_code=404, detail="Pesquisa não encontrada")
+
     geracao = (
         db.query(Geracao)
         .filter(Geracao.pesquisa_id == pesquisa_id, Geracao.tipo == tipo)

@@ -5,22 +5,22 @@ from app.services.gerador_etp_service import executar_geracao
 from app.services.scraper_service import executar_e_persistir
 
 
-def iniciar_job_scraping(pesquisa_id: int, termo: str, limite: int):
+def iniciar_job_scraping(pesquisa_id: int, termo: str, limite: int, usuario_id: int):
     thread = threading.Thread(
         target=executar_e_persistir, args=(pesquisa_id, termo, limite), daemon=True
     )
     thread.start()
 
 
-def iniciar_job_analise(analise_id: int, pesquisa_id: int):
+def iniciar_job_analise(analise_id: int, pesquisa_id: int, usuario_id: int):
     thread = threading.Thread(
-        target=executar_analise, args=(analise_id, pesquisa_id), daemon=True
+        target=executar_analise, args=(analise_id, pesquisa_id, usuario_id), daemon=True
     )
     thread.start()
 
 
-def iniciar_job_geracao(geracao_id: int, pesquisa_id: int, params: dict):
+def iniciar_job_geracao(geracao_id: int, pesquisa_id: int, params: dict, usuario_id: int):
     thread = threading.Thread(
-        target=executar_geracao, args=(geracao_id, pesquisa_id, params), daemon=True
+        target=executar_geracao, args=(geracao_id, pesquisa_id, params, usuario_id), daemon=True
     )
     thread.start()

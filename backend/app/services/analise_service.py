@@ -9,13 +9,14 @@ from app.services.gemini_service import (
     chamar_gemini,
     montar_prompt_final,
     resumir_textos_pdfs,
+    salvar_uso_tokens,
 )
 from app.services.pdf_extractor import extrair_textos_da_pasta
 
 logger = logging.getLogger("analise_service")
 
 
-def executar_analise(analise_id: int, pesquisa_id: int):
+def executar_analise(analise_id: int, pesquisa_id: int, usuario_id: int):
     db = SessionLocal()
     try:
         pesquisa = db.query(Pesquisa).filter(Pesquisa.id == pesquisa_id).first()
@@ -37,11 +38,13 @@ def executar_analise(analise_id: int, pesquisa_id: int):
         prompt = montar_prompt_final(
             pesquisa_dict, textos_pdfs, pesquisa.quantidade_desejada, carregar_prompt_base()
         )
-        resultado = chamar_gemini(prompt)
+        resultado, token_info = chamar_gemini(prompt)
+
+        salvar_uso_tokens(db, usuario_id, "analise", token_info, referencia_id=analise_id)
 
         analise.status = "completo"
         analise.resultado_json = json.dumps(resultado, ensure_ascii=False)
-        analise.modelo_gemini = settings.GEMINI_MODEL
+        analise.modelo_gemini = token_info.modelo
         db.commit()
     except Exception as e:
         logger.error(f"Erro ao executar análise {analise_id}: {e}", exc_info=True)
