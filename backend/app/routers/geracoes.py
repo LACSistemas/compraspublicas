@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from app.auth import get_active_user
+from app.auth import get_active_user, get_active_user_download
 from app.database import get_db
 from app.models import Geracao, Pesquisa, Usuario
 from app.schemas import GeracaoCreate, GeracaoDetailOut, GeracaoStatusOut
@@ -117,7 +117,7 @@ def download_geracao(
     pesquisa_id: int,
     tipo: str = "etp",
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_active_user),
+    current_user: Usuario = Depends(get_active_user_download),
 ):
     pesquisa = (
         db.query(Pesquisa)

@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import bcrypt as _bcrypt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Query, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -31,10 +31,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
 
-def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
-) -> Usuario:
+def _user_from_token(token: str, db: Session) -> Usuario:
     credentials_exc = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Credenciais inválidas",
@@ -47,10 +44,35 @@ def get_current_user(
             raise credentials_exc
     except JWTError:
         raise credentials_exc
-
     user = db.query(Usuario).filter(Usuario.id == int(user_id)).first()
     if user is None:
         raise credentials_exc
+    return user
+
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> Usuario:
+    return _user_from_token(token, db)
+
+
+def get_active_user_download(
+    request: Request,
+    token: Optional[str] = Query(default=None),
+    db: Session = Depends(get_db),
+) -> Usuario:
+    """Aceita o JWT tanto do header Authorization quanto do query param ?token= (para downloads diretos)."""
+    raw = token
+    if raw is None:
+        auth = request.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            raw = auth[7:]
+    if not raw:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Não autenticado")
+    user = _user_from_token(raw, db)
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Aguardando autorização do administrador")
     return user
 
 
