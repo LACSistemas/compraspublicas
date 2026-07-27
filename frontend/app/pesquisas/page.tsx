@@ -35,7 +35,7 @@ function PesquisasContent() {
         <Button render={<Link href="/nova-pesquisa">Nova Pesquisa</Link>} />
       </div>
       {loading && <p className="text-sm text-muted-foreground">Carregando...</p>}
-      {erro && <p className="text-sm text-red-500">{erro}</p>}
+      {erro && <p className="text-sm text-destructive">{erro}</p>}
       {!loading && !erro && <PesquisaLista pesquisas={pesquisas} />}
     </div>
   );

@@ -9,6 +9,18 @@ import {
   type AdminDashboard,
   type AdminUsuario,
 } from "@/lib/api-client";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useEffect, useState } from "react";
 
 export default function AdminPage() {
@@ -20,37 +32,41 @@ export default function AdminPage() {
 }
 
 function AdminPanel() {
-  const [aba, setAba] = useState<"usuarios" | "dashboard">("usuarios");
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
+    <div className="min-h-screen bg-background py-8 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-            Painel de Administração
-          </h1>
-          <a href="/" className="text-sm text-blue-600 hover:underline">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">
+              Painel de Administração
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Gerencie usuários e monitore o consumo de tokens
+            </p>
+          </div>
+          <Button variant="outline" size="sm" render={<a href="/" />}>
             Voltar ao sistema
-          </a>
+          </Button>
         </div>
 
-        <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800">
-          {(["usuarios", "dashboard"] as const).map((a) => (
-            <button
-              key={a}
-              onClick={() => setAba(a)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                aba === a
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-              }`}
-            >
-              {a === "usuarios" ? "Usuários" : "Dashboard de Tokens"}
-            </button>
-          ))}
-        </div>
+        <Tabs defaultValue="usuarios">
+          <TabsList variant="line" className="w-full justify-start border-b border-border rounded-none pb-0 h-auto">
+            <TabsTrigger value="usuarios" className="px-4 pb-3 rounded-none">
+              Usuários
+            </TabsTrigger>
+            <TabsTrigger value="dashboard" className="px-4 pb-3 rounded-none">
+              Dashboard de Tokens
+            </TabsTrigger>
+          </TabsList>
 
-        {aba === "usuarios" ? <TabelaUsuarios /> : <DashboardTokens />}
+          <TabsContent value="usuarios" className="mt-6">
+            <TabelaUsuarios />
+          </TabsContent>
+
+          <TabsContent value="dashboard" className="mt-6">
+            <DashboardTokens />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
@@ -64,7 +80,7 @@ function TabelaUsuarios() {
   useEffect(() => {
     adminListarUsuarios()
       .then(setUsuarios)
-      .catch((e) => setErro(e.message))
+      .catch((e: unknown) => setErro(e instanceof Error ? e.message : "Erro"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -77,69 +93,62 @@ function TabelaUsuarios() {
     }
   }
 
-  if (loading) return <p className="text-sm text-gray-500">Carregando...</p>;
-  if (erro) return <p className="text-sm text-red-500">{erro}</p>;
+  if (loading) return <p className="text-sm text-muted-foreground py-6">Carregando...</p>;
+  if (erro) return <p className="text-sm text-destructive py-6">{erro}</p>;
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-100 dark:bg-gray-900">
-          <tr>
-            {["Nome", "E-mail", "Status", "Tokens", "Cadastro", ""].map((h) => (
-              <th key={h} className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+    <Card>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nome</TableHead>
+            <TableHead>E-mail</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Tokens</TableHead>
+            <TableHead>Cadastro</TableHead>
+            <TableHead />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {usuarios.map((u) => (
-            <tr key={u.id} className="bg-white dark:bg-gray-950">
-              <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
-                {u.nome}
+            <TableRow key={u.id}>
+              <TableCell className="font-medium">
+                <span className="text-foreground">{u.nome}</span>
                 {u.is_owner && (
-                  <span className="ml-2 rounded bg-yellow-100 dark:bg-yellow-900 px-1.5 py-0.5 text-xs text-yellow-800 dark:text-yellow-200">
+                  <Badge variant="outline" className="ml-2 text-[10px]">
                     owner
-                  </span>
+                  </Badge>
                 )}
-              </td>
-              <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{u.email}</td>
-              <td className="px-4 py-3">
-                <span
-                  className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                    u.is_active
-                      ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                      : "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300"
-                  }`}
-                >
+              </TableCell>
+              <TableCell className="text-muted-foreground">{u.email}</TableCell>
+              <TableCell>
+                <Badge variant={u.is_active ? "default" : "secondary"}>
                   {u.is_active ? "Ativo" : "Aguardando"}
-                </span>
-              </td>
-              <td className="px-4 py-3 text-gray-600 dark:text-gray-400 tabular-nums">
+                </Badge>
+              </TableCell>
+              <TableCell className="tabular-nums text-muted-foreground">
                 {u.tokens_total.toLocaleString("pt-BR")}
-              </td>
-              <td className="px-4 py-3 text-gray-500 dark:text-gray-500 text-xs">
+              </TableCell>
+              <TableCell className="text-xs text-muted-foreground">
                 {u.criado_em ? new Date(u.criado_em).toLocaleDateString("pt-BR") : "—"}
-              </td>
-              <td className="px-4 py-3">
+              </TableCell>
+              <TableCell>
                 {!u.is_owner && (
-                  <button
+                  <Button
+                    size="sm"
+                    variant={u.is_active ? "destructive" : "default"}
+                    className="h-7 px-3 text-xs"
                     onClick={() => toggle(u)}
-                    className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-                      u.is_active
-                        ? "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300"
-                        : "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900 dark:text-green-300"
-                    }`}
                   >
                     {u.is_active ? "Desativar" : "Aprovar"}
-                  </button>
+                  </Button>
                 )}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </TableBody>
+      </Table>
+    </Card>
   );
 }
 
@@ -151,12 +160,12 @@ function DashboardTokens() {
   useEffect(() => {
     adminDashboard()
       .then(setData)
-      .catch((e) => setErro(e.message))
+      .catch((e: unknown) => setErro(e instanceof Error ? e.message : "Erro"))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p className="text-sm text-gray-500">Carregando...</p>;
-  if (erro) return <p className="text-sm text-red-500">{erro}</p>;
+  if (loading) return <p className="text-sm text-muted-foreground py-6">Carregando...</p>;
+  if (erro) return <p className="text-sm text-destructive py-6">{erro}</p>;
   if (!data) return null;
 
   const kpis = [
@@ -170,95 +179,102 @@ function DashboardTokens() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {kpis.map((k) => (
-          <div
-            key={k.label}
-            className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4"
-          >
-            <p className="text-xs text-gray-500 dark:text-gray-400">{k.label}</p>
-            <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
-              {k.value}
-            </p>
-          </div>
+          <Card key={k.label} size="sm">
+            <CardContent className="pt-4">
+              <p className="text-xs text-muted-foreground">{k.label}</p>
+              <p className="mt-1 text-2xl font-bold text-foreground tabular-nums">
+                {k.value}
+              </p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
-          <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            Média por tipo de geração
-          </h2>
-          <dl className="space-y-2 text-sm">
-            {[
-              ["ETP", data.media_tokens_etp],
-              ["TR", data.media_tokens_tr],
-              ["Pesquisa", data.media_tokens_pesquisa],
-              ["Análise", data.media_tokens_analise],
-            ].map(([label, val]) => (
-              <div key={String(label)} className="flex justify-between">
-                <dt className="text-gray-500 dark:text-gray-400">{label}</dt>
-                <dd className="font-medium text-gray-900 dark:text-gray-100 tabular-nums">
-                  {Number(val).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Média por tipo de geração</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl className="space-y-2 text-sm">
+              {(
+                [
+                  ["ETP", data.media_tokens_etp],
+                  ["TR", data.media_tokens_tr],
+                  ["Pesquisa", data.media_tokens_pesquisa],
+                  ["Análise", data.media_tokens_analise],
+                ] as [string, number][]
+              ).map(([label, val]) => (
+                <div key={label} className="flex justify-between items-center">
+                  <dt className="text-muted-foreground">{label}</dt>
+                  <dd className="font-medium text-foreground tabular-nums">
+                    {Number(val).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </CardContent>
+        </Card>
 
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
-          <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            Top 10 usuários por consumo
-          </h2>
-          <ol className="space-y-1 text-sm">
-            {data.top_usuarios.map((u, i) => (
-              <li key={u.email} className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">
-                  <span className="mr-2 text-gray-400">{i + 1}.</span>
-                  {u.nome}
-                </span>
-                <span className="font-medium text-gray-900 dark:text-gray-100 tabular-nums">
-                  {u.tokens_total.toLocaleString("pt-BR")}
-                </span>
-              </li>
-            ))}
-            {data.top_usuarios.length === 0 && (
-              <li className="text-gray-400 text-xs">Nenhum dado ainda</li>
-            )}
-          </ol>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Top 10 por consumo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ol className="space-y-1.5 text-sm">
+              {data.top_usuarios.map((u, i) => (
+                <li key={u.email} className="flex justify-between items-center">
+                  <span className="text-muted-foreground">
+                    <span className="mr-2 text-xs text-muted-foreground/60 tabular-nums">
+                      {i + 1}.
+                    </span>
+                    {u.nome}
+                  </span>
+                  <span className="font-medium text-foreground tabular-nums">
+                    {u.tokens_total.toLocaleString("pt-BR")}
+                  </span>
+                </li>
+              ))}
+              {data.top_usuarios.length === 0 && (
+                <li className="text-xs text-muted-foreground">Nenhum dado ainda</li>
+              )}
+            </ol>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
-        <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-          Tokens por dia (últimos 30 dias)
-        </h2>
-        {data.tokens_por_dia.length === 0 ? (
-          <p className="text-xs text-gray-400">Nenhum dado ainda</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr>
-                  <th className="text-left text-gray-500 font-medium pb-2">Data</th>
-                  <th className="text-right text-gray-500 font-medium pb-2">Tokens</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Tokens por dia (últimos 30 dias)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {data.tokens_por_dia.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Nenhum dado ainda</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Data</TableHead>
+                  <TableHead className="text-xs text-right">Tokens</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {data.tokens_por_dia.map((d) => (
-                  <tr key={d.data}>
-                    <td className="py-1 text-gray-600 dark:text-gray-400">{d.data}</td>
-                    <td className="py-1 text-right tabular-nums text-gray-900 dark:text-gray-100">
+                  <TableRow key={d.data}>
+                    <TableCell className="text-xs text-muted-foreground">{d.data}</TableCell>
+                    <TableCell className="text-xs text-right tabular-nums text-foreground">
                       {d.total.toLocaleString("pt-BR")}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

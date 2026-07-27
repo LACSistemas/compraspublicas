@@ -31,7 +31,7 @@ export function AuthGuard({ children, requireOwner = false }: Props) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <span className="text-gray-500 text-sm">Carregando...</span>
+        <span className="text-muted-foreground text-sm">Carregando...</span>
       </div>
     );
   }

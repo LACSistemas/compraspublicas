@@ -1,22 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
-import { UserHeader } from "@/components/user-header";
+import { Navbar } from "@/components/navbar";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
-const geistMono = Geist_Mono({
+const mono = JetBrains_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
-  title: "Auditoria de Compras Públicas",
-  description: "Scraping e auditoria automatizada de processos licitatórios.",
+  title: "LicitaAI — Auditoria de Compras Públicas",
+  description: "Auditoria inteligente de processos licitatórios com Inteligência Artificial.",
 };
 
 export default function RootLayout({
@@ -27,11 +29,11 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${jakarta.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <UserHeader />
+          <Navbar />
           {children}
         </AuthProvider>
       </body>
