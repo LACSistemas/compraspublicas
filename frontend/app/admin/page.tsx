@@ -8,6 +8,7 @@ import {
   adminListarUsuarios,
   type AdminDashboard,
   type AdminUsuario,
+  type EstatsFaseAdmin,
 } from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -245,6 +246,49 @@ function DashboardTokens() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Métricas de Contratações */}
+      {(data.stats_perguntas_global?.total_chamadas > 0 ||
+        data.stats_bcc_global?.total_chamadas > 0) && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">Métricas de Contratações (global)</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {(
+              [
+                ["Geração de Perguntas", data.stats_perguntas_global],
+                ["Base de Conhecimento", data.stats_bcc_global],
+              ] as [string, EstatsFaseAdmin][]
+            ).map(([label, s]) => (
+              <Card key={label}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">{label}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm">
+                    {(
+                      [
+                        ["Chamadas", s.total_chamadas, 0],
+                        ["Média", s.media, 0],
+                        ["Mediana", s.mediana, 0],
+                        ["Mínimo", s.minimo, 0],
+                        ["Máximo", s.maximo, 0],
+                        ["Variância", s.variancia, 0],
+                      ] as [string, number, number][]
+                    ).map(([k, v, d]) => (
+                      <div key={k}>
+                        <p className="text-[10px] text-muted-foreground">{k}</p>
+                        <p className="font-semibold tabular-nums text-xs">
+                          {v.toLocaleString("pt-BR", { maximumFractionDigits: d })}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardHeader>

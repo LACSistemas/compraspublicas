@@ -1,10 +1,14 @@
 import type {
   Analise,
   AnaliseCreateResponse,
+  BaseConhecimento,
+  Contratacao,
+  EstatisticasTokensOut,
   Geracao,
   GeracaoCreatePayload,
   GeracaoCreateResponse,
   Pesquisa,
+  PerguntaContratacao,
   PesquisaCreatePayload,
   PesquisaDetalhe,
 } from "@/lib/types";
@@ -156,6 +160,15 @@ export interface AdminUsuario {
   criado_em: string | null;
 }
 
+export interface EstatsFaseAdmin {
+  total_chamadas: number;
+  media: number;
+  mediana: number;
+  variancia: number;
+  minimo: number;
+  maximo: number;
+}
+
 export interface AdminDashboard {
   total_usuarios: number;
   usuarios_ativos: number;
@@ -171,4 +184,71 @@ export interface AdminDashboard {
   tokens_por_dia: { data: string; total: number }[];
   tokens_por_tipo: { tipo: string; total: number; media: number }[];
   top_usuarios: { email: string; nome: string; tokens_total: number }[];
+  stats_perguntas_global: EstatsFaseAdmin;
+  stats_bcc_global: EstatsFaseAdmin;
+}
+
+// ── Contratações ──────────────────────────────────────────────────────────────
+
+export interface ContratacaoCreatePayload {
+  objeto: string;
+  orgao_unidade: string;
+  numero_processo?: string;
+  equipe_responsavel?: string;
+  tipo_contratacao?: string;
+  contexto_inicial?: string;
+}
+
+export function criarContratacao(payload: ContratacaoCreatePayload): Promise<Contratacao> {
+  return request<Contratacao>("/contratacoes", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function listarContratacoes(): Promise<Contratacao[]> {
+  return request<Contratacao[]>("/contratacoes");
+}
+
+export function getContratacao(id: number): Promise<Contratacao> {
+  return request<Contratacao>(`/contratacoes/${id}`);
+}
+
+export function iniciarInvestigacao(id: number): Promise<void> {
+  return request<void>(`/contratacoes/${id}/iniciar-investigacao`, { method: "POST" });
+}
+
+export function getPerguntas(id: number): Promise<PerguntaContratacao[]> {
+  return request<PerguntaContratacao[]>(`/contratacoes/${id}/perguntas`);
+}
+
+export function responderPergunta(
+  contratacaoId: number,
+  perguntaId: number,
+  resposta: string,
+): Promise<PerguntaContratacao> {
+  return request<PerguntaContratacao>(
+    `/contratacoes/${contratacaoId}/perguntas/${perguntaId}/responder`,
+    { method: "POST", body: JSON.stringify({ resposta }) },
+  );
+}
+
+export function processarBase(id: number): Promise<void> {
+  return request<void>(`/contratacoes/${id}/processar-base`, { method: "POST" });
+}
+
+export function validarEvidencia(
+  contratacaoId: number,
+  idx: number,
+  statusValidacao: string,
+  responsavel?: string,
+): Promise<BaseConhecimento> {
+  return request<BaseConhecimento>(`/contratacoes/${contratacaoId}/bcc/evidencias`, {
+    method: "PATCH",
+    body: JSON.stringify({ idx, status_validacao: statusValidacao, responsavel }),
+  });
+}
+
+export function getEstatisticasTokens(): Promise<EstatisticasTokensOut> {
+  return request<EstatisticasTokensOut>("/contratacoes/estatisticas/tokens");
 }

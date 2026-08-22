@@ -111,6 +111,7 @@ export function Navbar() {
             <nav className="hidden sm:flex items-center gap-1">
               <NavLink href="/pesquisas" label="Pesquisas" active={isActive("/pesquisas")} />
               <NavLink href="/nova-pesquisa" label="Nova pesquisa" active={isActive("/nova-pesquisa")} />
+              <NavLink href="/contratacoes" label="Contratações" active={isActive("/contratacoes")} />
             </nav>
           )}
         </div>

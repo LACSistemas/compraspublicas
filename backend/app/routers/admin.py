@@ -42,6 +42,15 @@ class TopUsuario(BaseModel):
     tokens_total: int
 
 
+class EstatsFaseAdmin(BaseModel):
+    total_chamadas: int
+    media: float
+    mediana: float
+    variancia: float
+    minimo: int
+    maximo: int
+
+
 class DashboardResponse(BaseModel):
     total_usuarios: int
     usuarios_ativos: int
@@ -57,6 +66,8 @@ class DashboardResponse(BaseModel):
     tokens_por_dia: List[TokensPorDia]
     tokens_por_tipo: List[TokensPorTipo]
     top_usuarios: List[TopUsuario]
+    stats_perguntas_global: EstatsFaseAdmin
+    stats_bcc_global: EstatsFaseAdmin
 
 
 @router.get("/usuarios", response_model=List[UsuarioAdmin])
@@ -168,6 +179,30 @@ def dashboard(
             .scalar()
         ) or 0.0
 
+    def _stats_tipo(tipo: str) -> EstatsFaseAdmin:
+        rows = (
+            db.query(UsoTokens.tokens_total)
+            .filter(UsoTokens.tipo == tipo)
+            .order_by(UsoTokens.tokens_total)
+            .all()
+        )
+        values = [r.tokens_total or 0 for r in rows]
+        n = len(values)
+        if n == 0:
+            return EstatsFaseAdmin(total_chamadas=0, media=0.0, mediana=0.0, variancia=0.0, minimo=0, maximo=0)
+        media = sum(values) / n
+        mid = n // 2
+        mediana = float(values[mid]) if n % 2 == 1 else (values[mid - 1] + values[mid]) / 2.0
+        variancia = sum((v - media) ** 2 for v in values) / n
+        return EstatsFaseAdmin(
+            total_chamadas=n,
+            media=round(media, 2),
+            mediana=round(mediana, 2),
+            variancia=round(variancia, 2),
+            minimo=values[0],
+            maximo=values[-1],
+        )
+
     tokens_hoje = _tokens_desde(hoje_inicio)
     tokens_semana = _tokens_desde(semana_inicio)
     tokens_mes = _tokens_desde(mes_inicio)
@@ -221,6 +256,9 @@ def dashboard(
     )
     top_usuarios = [TopUsuario(email=r.email, nome=r.nome, tokens_total=r.tokens_total) for r in top_rows]
 
+    stats_perguntas_global = _stats_tipo("perguntas_contratacao")
+    stats_bcc_global = _stats_tipo("bcc_contratacao")
+
     return DashboardResponse(
         total_usuarios=total_usuarios,
         usuarios_ativos=usuarios_ativos,
@@ -236,4 +274,6 @@ def dashboard(
         tokens_por_dia=tokens_por_dia,
         tokens_por_tipo=tokens_por_tipo,
         top_usuarios=top_usuarios,
+        stats_perguntas_global=stats_perguntas_global,
+        stats_bcc_global=stats_bcc_global,
     )

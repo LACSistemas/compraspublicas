@@ -2,13 +2,14 @@
 
 import { AuthGuard } from "@/components/auth-guard";
 import { Button } from "@/components/ui/button";
-import { Search, FileText, Bot } from "lucide-react";
+import { Search, FileText, Bot, ClipboardList } from "lucide-react";
 import Link from "next/link";
 
 const features = [
   { icon: Search, label: "Scraping automático", desc: "Coleta dados de portais de licitação" },
   { icon: Bot, label: "Análise com IA", desc: "Identifica inconsistências e riscos" },
   { icon: FileText, label: "Geração ETP & TR", desc: "Documentos gerados com base na legislação" },
+  { icon: ClipboardList, label: "Assistente de Planejamento", desc: "Constrói a base de conhecimento antes de gerar documentos" },
 ];
 
 export default function Home() {
@@ -58,11 +59,14 @@ export default function Home() {
           </div>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button size="lg" className="h-11 px-8 font-semibold text-sm" render={<Link href="/nova-pesquisa" />}>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 flex-wrap">
+            <Button size="lg" className="h-11 px-8 font-semibold text-sm" render={<Link href="/contratacoes/nova" />}>
+              Nova Contratação
+            </Button>
+            <Button size="lg" variant="outline" className="h-11 px-8 font-semibold text-sm" render={<Link href="/nova-pesquisa" />}>
               Nova Pesquisa
             </Button>
-            <Button size="lg" variant="outline" className="h-11 px-8 font-semibold text-sm" render={<Link href="/pesquisas" />}>
+            <Button size="lg" variant="ghost" className="h-11 px-8 font-semibold text-sm" render={<Link href="/pesquisas" />}>
               Ver Pesquisas
             </Button>
           </div>

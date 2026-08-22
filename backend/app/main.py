@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import Base, SessionLocal, engine
-from app.routers import analises, geracoes, pesquisas
+from app.routers import analises, contratacoes, geracoes, pesquisas
 from app.routers import auth as auth_router
 from app.routers import admin as admin_router
 
@@ -61,3 +61,4 @@ app.include_router(admin_router.router)
 app.include_router(pesquisas.router)
 app.include_router(analises.router)
 app.include_router(geracoes.router)
+app.include_router(contratacoes.router)
