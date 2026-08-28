@@ -1,0 +1,6 @@
+-r backend/requirements.txt
+
+httpx
+pytest
+pytest-cov
+

@@ -32,8 +32,8 @@ def upgrade() -> None:
     sa.Column('contexto_inicial', sa.Text(), nullable=True),
     sa.Column('status', sa.String(length=50), server_default='cadastro', nullable=False),
     sa.Column('erro_mensagem', sa.Text(), nullable=True),
-    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('atualizado_em', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
+    sa.Column('atualizado_em', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['usuario_id'], ['usuarios.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -45,8 +45,8 @@ def upgrade() -> None:
     sa.Column('progresso_pct', sa.Integer(), server_default='0', nullable=True),
     sa.Column('nivel_maturidade', sa.String(length=20), server_default='Insuficiente', nullable=True),
     sa.Column('modelo_gemini', sa.String(length=100), nullable=True),
-    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('atualizado_em', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
+    sa.Column('atualizado_em', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['contratacao_id'], ['contratacoes.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('contratacao_id')
@@ -58,7 +58,7 @@ def upgrade() -> None:
     sa.Column('usuario_id', sa.Integer(), nullable=True),
     sa.Column('acao', sa.String(length=500), nullable=False),
     sa.Column('detalhe', sa.Text(), nullable=True),
-    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['contratacao_id'], ['contratacoes.id'], ),
     sa.ForeignKeyConstraint(['usuario_id'], ['usuarios.id'], ),
     sa.PrimaryKeyConstraint('id')

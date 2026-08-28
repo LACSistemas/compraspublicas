@@ -60,13 +60,13 @@ export default function Home() {
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 flex-wrap">
-            <Button size="lg" className="h-11 px-8 font-semibold text-sm" render={<Link href="/contratacoes/nova" />}>
+            <Button nativeButton={false} size="lg" className="h-11 px-8 font-semibold text-sm" render={<Link href="/contratacoes/nova" />}>
               Nova Contratação
             </Button>
-            <Button size="lg" variant="outline" className="h-11 px-8 font-semibold text-sm" render={<Link href="/nova-pesquisa" />}>
+            <Button nativeButton={false} size="lg" variant="outline" className="h-11 px-8 font-semibold text-sm" render={<Link href="/nova-pesquisa" />}>
               Nova Pesquisa
             </Button>
-            <Button size="lg" variant="ghost" className="h-11 px-8 font-semibold text-sm" render={<Link href="/pesquisas" />}>
+            <Button nativeButton={false} size="lg" variant="ghost" className="h-11 px-8 font-semibold text-sm" render={<Link href="/pesquisas" />}>
               Ver Pesquisas
             </Button>
           </div>

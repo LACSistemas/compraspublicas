@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { responderPergunta, processarBase } from "@/lib/api-client";
+import { getPerguntas, responderPergunta, processarBase } from "@/lib/api-client";
 import type { PerguntaContratacao } from "@/lib/types";
+import { PesquisaPrecosCard } from "@/components/pesquisa-precos-card";
 
 interface Props {
   perguntas: PerguntaContratacao[];
@@ -15,25 +16,28 @@ interface Props {
 }
 
 export function InvestigacaoFlow({ perguntas, contratacaoId, onProcessarIniciado }: Props) {
+  const [perguntasAtuais, setPerguntasAtuais] = useState(perguntas);
   const [respostas, setRespostas] = useState<Record<number, string>>(() => {
     const init: Record<number, string> = {};
-    for (const p of perguntas) {
+    for (const p of perguntasAtuais) {
       if (p.resposta_escolhida) init[p.id] = p.resposta_escolhida;
     }
     return init;
   });
 
-  const primeiroSemResposta = perguntas.findIndex((p) => !respostas[p.id]);
+  const primeiroSemResposta = perguntasAtuais.findIndex((p) => !respostas[p.id]);
   const [currentIdx, setCurrentIdx] = useState(
-    primeiroSemResposta === -1 ? perguntas.length : primeiroSemResposta,
+    primeiroSemResposta === -1 ? perguntasAtuais.length : primeiroSemResposta,
   );
   const [respondendo, setRespondendo] = useState(false);
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
 
-  const todasRespondidas = currentIdx >= perguntas.length;
-  const perguntaAtual = todasRespondidas ? null : perguntas[currentIdx];
-  const progresso = (Object.keys(respostas).length / perguntas.length) * 100;
+  const todasRespondidas = currentIdx >= perguntasAtuais.length;
+  const perguntaAtual = todasRespondidas ? null : perguntasAtuais[currentIdx];
+  const progresso = perguntasAtuais.length
+    ? (Object.keys(respostas).length / perguntasAtuais.length) * 100 : 0;
 
   async function handleResposta(letra: string) {
     if (!perguntaAtual || respondendo) return;
@@ -54,8 +58,16 @@ export function InvestigacaoFlow({ perguntas, contratacaoId, onProcessarIniciado
     setErro(null);
     setProcessando(true);
     try {
-      await processarBase(contratacaoId);
-      onProcessarIniciado();
+      const resultado = await processarBase(contratacaoId);
+      if (resultado.perguntas_adicionais) {
+        const atualizadas = await getPerguntas(contratacaoId);
+        setPerguntasAtuais(atualizadas);
+        setCurrentIdx(atualizadas.findIndex((p) => !p.resposta_escolhida));
+        setAviso(`${resultado.perguntas_adicionais} pergunta(s) complementar(es) foram adicionadas para fechar pendências importantes.`);
+        setProcessando(false);
+      } else {
+        onProcessarIniciado();
+      }
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro ao iniciar processamento");
       setProcessando(false);
@@ -70,7 +82,7 @@ export function InvestigacaoFlow({ perguntas, contratacaoId, onProcessarIniciado
           <span className="text-muted-foreground">
             {todasRespondidas
               ? "Todas as perguntas respondidas"
-              : `Pergunta ${currentIdx + 1} de ${perguntas.length}`}
+              : `Pergunta ${currentIdx + 1} de ${perguntasAtuais.length}`}
           </span>
           <span className="font-medium">{Math.round(progresso)}%</span>
         </div>
@@ -81,6 +93,9 @@ export function InvestigacaoFlow({ perguntas, contratacaoId, onProcessarIniciado
         <Alert variant="destructive">
           <AlertDescription>{erro}</AlertDescription>
         </Alert>
+      )}
+      {aviso && (
+        <Alert><AlertDescription>{aviso}</AlertDescription></Alert>
       )}
 
       {/* Pergunta atual */}
@@ -118,7 +133,7 @@ export function InvestigacaoFlow({ perguntas, contratacaoId, onProcessarIniciado
       {/* Perguntas já respondidas (somente leitura — navegar para ver) */}
       {currentIdx > 0 && !todasRespondidas && (
         <div className="flex gap-2 flex-wrap">
-          {perguntas.slice(0, currentIdx).map((p, idx) => {
+          {perguntasAtuais.slice(0, currentIdx).map((p, idx) => {
             const resposta = respostas[p.id];
             return (
               <button
@@ -143,15 +158,16 @@ export function InvestigacaoFlow({ perguntas, contratacaoId, onProcessarIniciado
                 Investigação concluída!
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Todas as {perguntas.length} perguntas foram respondidas. Clique abaixo para a IA construir a Base de Conhecimento da Contratação.
+                Você respondeu as {perguntasAtuais.length} perguntas desta etapa. Agora vamos verificar se alguma informação essencial ainda precisa de confirmação antes de construir a Base de Conhecimento.
               </p>
             </div>
+            <PesquisaPrecosCard contratacaoId={contratacaoId} />
             <Button
               onClick={handleProcessar}
               disabled={processando}
               size="lg"
             >
-              {processando ? "Iniciando processamento…" : "Processar Base de Conhecimento"}
+              {processando ? "Verificando pendências…" : "Verificar pendências e continuar"}
             </Button>
           </CardContent>
         </Card>

@@ -79,7 +79,8 @@ def _extrair_json_da_resposta(texto: str) -> dict:
 
 
 def _client() -> genai.Client:
-    return genai.Client(api_key=settings.GEMINI_API_KEY)
+    return genai.Client(api_key=settings.GEMINI_API_KEY,
+        http_options=types.HttpOptions(timeout=settings.GEMINI_TIMEOUT_MS))
 
 
 def contar_tokens_input(prompt: str) -> int:

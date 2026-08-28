@@ -11,17 +11,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { InvestigacaoFlow } from "@/components/investigacao-flow";
 import { BaseConhecimentoCard } from "@/components/base-conhecimento-card";
 import { AnaliseIaCard } from "@/components/analise-ia-card";
+import { PlanoInvestigacaoCard } from "@/components/plano-investigacao-card";
+import { EtpGeracaoCard } from "@/components/etp-geracao-card";
 import { usePolling } from "@/lib/use-pesquisa-polling";
-import { getContratacao, getEstatisticasTokens, iniciarInvestigacao } from "@/lib/api-client";
+import { aprofundarInvestigacao, getContratacao, getEstatisticasTokens, iniciarInvestigacao } from "@/lib/api-client";
 import type { Contratacao, StatusContratacao, TokensPorContratacao } from "@/lib/types";
 
 // ── StepIndicator ─────────────────────────────────────────────────────────────
 
-const STEPS = ["Cadastro", "Investigação", "Processando", "Base Pronta", "Documentos"];
+const STEPS = ["Cadastro", "Responder", "Revisão IA", "Base pronta", "Documentos"];
 
 function stepFromStatus(status: StatusContratacao): number {
   if (status === "cadastro") return 1;
-  if (status === "gerando_perguntas" || status === "investigacao") return 2;
+  if (status === "gerando_plano" || status === "gerando_perguntas" || status === "investigacao") return 2;
   if (status === "processando_bcc") return 3;
   if (status === "bcc_ativa") return 4;
   return 1;
@@ -99,9 +101,10 @@ function fmt(n: number) {
   return n.toLocaleString("pt-BR");
 }
 
-function BccAtivaBody({ contratacao }: { contratacao: Contratacao }) {
+function BccAtivaBody({ contratacao, onAtualizar }: { contratacao: Contratacao; onAtualizar: () => void }) {
   const [tokenInfo, setTokenInfo] = useState<TokensPorContratacao | null>(null);
   const [aberto, setAberto] = useState(false);
+  const [aprofundando, setAprofundando] = useState(false);
 
   // Busca única após BCC estar ativa
   useState(() => {
@@ -119,7 +122,17 @@ function BccAtivaBody({ contratacao }: { contratacao: Contratacao }) {
         bcc={contratacao.base_conhecimento!}
         contratacaoId={contratacao.id}
       />
-      <AnaliseIaCard dados={contratacao.base_conhecimento!.dados} />
+      <AnaliseIaCard dados={contratacao.base_conhecimento!.dados} contratacaoId={contratacao.id} />
+      <Card className="border-primary/20"><CardContent className="pt-6 flex flex-col gap-3">
+        <div><p className="font-semibold">Aprofundar a Base com processos comparáveis</p>
+          <p className="text-sm text-muted-foreground mt-1">Reaproveita preços, itens e referências já coletados e pergunta somente decisões locais que ainda não podem ser comprovadas pelos documentos externos.</p></div>
+        <Button className="w-fit" disabled={aprofundando} onClick={async () => {
+          setAprofundando(true);
+          try { await aprofundarInvestigacao(contratacao.id); onAtualizar(); }
+          finally { setAprofundando(false); }
+        }}>{aprofundando ? "Preparando aprofundamento…" : "Aprofundar investigação"}</Button>
+      </CardContent></Card>
+      <EtpGeracaoCard contratacaoId={contratacao.id} />
 
       {/* Consumo de tokens desta contratação */}
       {tokenInfo && (tokenInfo.tokens_perguntas_total > 0 || tokenInfo.tokens_bcc_total > 0) && (
@@ -204,8 +217,8 @@ function StatusBody({
           <div>
             <p className="font-semibold">Contratação registrada</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Clique em "Iniciar Investigação" para a IA gerar 25 perguntas específicas sobre este
-              processo. As respostas serão usadas para construir a Base de Conhecimento.
+              Clique em &quot;Iniciar Investigação&quot; para estruturar o Plano, executar coletas automáticas
+              e perguntar somente o que continuar faltando. O conhecimento resultante alimentará a BCC.
             </p>
           </div>
           {erroIniciar && (
@@ -226,17 +239,26 @@ function StatusBody({
     );
   }
 
+  if (status === "gerando_plano") {
+    return <LoadingBlock texto="A IA está estruturando o Plano de Investigação e identificando as lacunas…" />;
+  }
+
   if (status === "gerando_perguntas") {
     return <LoadingBlock texto="A IA está gerando as perguntas de investigação…" />;
   }
 
   if (status === "investigacao") {
     return (
-      <InvestigacaoFlow
-        perguntas={contratacao.perguntas}
-        contratacaoId={contratacao.id}
-        onProcessarIniciado={onAtualizar}
-      />
+      <div className="flex flex-col gap-6">
+        {contratacao.perguntas.length > 0 && (
+          <InvestigacaoFlow
+            perguntas={contratacao.perguntas}
+            contratacaoId={contratacao.id}
+            onProcessarIniciado={onAtualizar}
+          />
+        )}
+        <PlanoInvestigacaoCard contratacaoId={contratacao.id} />
+      </div>
     );
   }
 
@@ -248,6 +270,7 @@ function StatusBody({
     return (
       <BccAtivaBody
         contratacao={contratacao}
+        onAtualizar={onAtualizar}
       />
     );
   }

@@ -9,7 +9,7 @@ Você é um especialista sênior em licitações e contratações públicas bras
 
 ## SUA TAREFA
 
-Gere exatamente **25 perguntas de múltipla escolha** (alternativas a, b, c, d, e) que, uma vez respondidas pelo gestor responsável, forneçam insumos suficientes para elaborar com qualidade os seguintes documentos obrigatórios:
+Gere **entre 10 e 15 perguntas de múltipla escolha** (alternativas a, b, c, d, e), somente sobre informações que dependam da manifestação do gestor. Elas devem fornecer insumos suficientes para elaborar com qualidade os seguintes documentos obrigatórios:
 
 - DFD — Documento de Formalização de Demanda
 - ETP — Estudo Técnico Preliminar
@@ -17,7 +17,7 @@ Gere exatamente **25 perguntas de múltipla escolha** (alternativas a, b, c, d, 
 - TR — Termo de Referência
 - Edital
 
-As perguntas devem cobrir as seguintes categorias na proporção indicada:
+As perguntas devem priorizar as categorias abaixo conforme sua relevância para o objeto, sem criar perguntas apenas para atingir uma quantidade fixa:
 
 1. **Necessidade pública e fundamentação** (3 perguntas): Qual problema público existe? Há urgência? Existe demanda histórica comprovada? A contratação decorre de obrigação legal?
 2. **Objeto, especificação técnica e quantitativo** (4 perguntas): O que exatamente se quer contratar? Qual quantidade? Há padrões normativos ou técnicos aplicáveis? Há marca ou modelo de referência?
@@ -57,4 +57,4 @@ Responda **APENAS** com um objeto JSON válido, sem texto adicional, sem coment�
   ]
 }}
 
-Gere as 25 perguntas cobrindo todas as 9 categorias acima na proporção indicada.
+Gere entre 10 e 15 perguntas, cobrindo as categorias pertinentes e evitando redundâncias.

@@ -185,7 +185,7 @@ export interface Geracao {
 }
 
 export interface GeracaoCreatePayload {
-  tipo: "etp" | "tr";
+  tipo: "dfd" | "etp" | "mapa_riscos" | "tr";
   un_gestora: string;
   responsaveis: string;
   objeto_resumido?: string | null;
@@ -200,6 +200,7 @@ export interface GeracaoCreateResponse {
 
 export type StatusContratacao =
   | "cadastro"
+  | "gerando_plano"
   | "gerando_perguntas"
   | "investigacao"
   | "processando_bcc"
@@ -355,6 +356,146 @@ export interface Contratacao {
   atualizado_em: string;
   perguntas: PerguntaContratacao[];
   base_conhecimento: BaseConhecimento | null;
+}
+
+export interface ConsultaPesquisaPrecos {
+  id: number;
+  ordem: number;
+  termo: string;
+  status: string;
+  processos_encontrados: number;
+  processos_novos: number;
+}
+
+export interface ObservacaoPreco {
+  id: number;
+  processo_url: string;
+  numero_processo: string | null;
+  comprador: string | null;
+  descricao_item: string;
+  quantidade: string | null;
+  unidade: string | null;
+  valor_unitario: string;
+  tipo_valor: string;
+  aderencia_pct: number;
+  comparavel: boolean;
+  motivo_exclusao: string | null;
+  documento_origem: string | null;
+  status_validacao: string;
+}
+
+export interface CampanhaPesquisaPrecos {
+  id: number;
+  contratacao_id: number;
+  status: "planejada" | "executando" | "pronta_revisao" | "aprovada" | "erro";
+  objeto_canonico: { descricao: string; termos_essenciais: string[] };
+  max_consultas: number;
+  resultado: Record<string, number | string | string[] | number[]>;
+  erro_mensagem: string | null;
+  aprovado_em: string | null;
+  consultas: ConsultaPesquisaPrecos[];
+  observacoes: ObservacaoPreco[];
+}
+
+export interface PlanoInformacaoView {
+  id: number | null;
+  codigo: string;
+  nome: string;
+  tipo: string;
+  obrigatoriedade: string;
+  estrategia_preferencial: string;
+  estrategia: string;
+  status: string;
+  justificativa_estrategia: string | null;
+  valor: unknown;
+  origem: string | null;
+  confianca: string | null;
+  estado_semantico: "nao_informado" | "nao_aplicavel" | "informado" | "inferido" | "confirmado" | "contraditorio";
+}
+
+export interface PlanoCardView {
+  id: number;
+  codigo: string;
+  nome: string;
+  pergunta_controle: string;
+  ordem: number;
+  status: string;
+  aplicavel: boolean;
+  justificativa_dispensa: string | null;
+  robustez_pct: number;
+  informacoes: PlanoInformacaoView[];
+  dependencias: string[];
+  dispensa_status: string | null;
+  dispensa_revisada_em: string | null;
+}
+
+export interface PlanoInvestigacao {
+  id: number;
+  contratacao_id: number;
+  versao: number;
+  status: string;
+  cards: PlanoCardView[];
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface LacunaPlano {
+  plano_informacao_id: number;
+  plano_card_id: number;
+  codigo_card: string;
+  codigo_informacao: string;
+  nome_informacao: string;
+  estrategia: string;
+  prioridade: number;
+  status: string;
+  obrigatoria: boolean;
+  bloqueia_conhecimento: boolean;
+}
+
+export interface ResumoLacunasPlano {
+  plano_id: number;
+  total: number;
+  bloqueantes: number;
+  opcionais: number;
+  pronto_para_conhecimento: boolean;
+  proxima_estrategia: string | null;
+  lacunas: LacunaPlano[];
+}
+
+export interface EvidenciaPlano {
+  id: number;
+  plano_informacao_id: number;
+  tipo: string;
+  descricao: string;
+  conteudo: unknown;
+  origem: string;
+  metodo_obtencao: string;
+  confianca: string;
+  hash_conteudo: string;
+  status_validacao: string;
+  estado: string;
+  substitui_evidencia_id: number | null;
+  criterios_atendidos: string[];
+  criado_em: string;
+}
+
+export interface ConhecimentoCard {
+  id: number;
+  plano_card_id: number;
+  codigo_card: string;
+  versao: number;
+  conclusao: string;
+  motivacao: string;
+  fundamentacao: string[];
+  riscos: unknown[];
+  recomendacoes: unknown[];
+  evidencias: number[];
+  robustez_pct: number;
+  status: string;
+  aprovado_em: string | null;
+  cobertura_criterios: Array<{ codigo: string; descricao: string; atendido: boolean }>;
+  dimensoes_robustez: Record<string, number>;
+  fontes_confirmadas: Array<{ codigo: string; titulo: string; referencia: string; dispositivo: string; url_oficial: string; orgao_emissor: string }>;
 }
 
 // ── Estatísticas de tokens ────────────────────────────────────────────────────

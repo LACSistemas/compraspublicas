@@ -29,12 +29,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchMe = useCallback(async (tok: string) => {
-    const res = await fetch(`${API_URL}/auth/me`, {
-      headers: { Authorization: `Bearer ${tok}` },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return res.json() as Promise<User>;
+    try {
+      const res = await fetch(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${tok}` },
+        cache: "no-store",
+        signal: AbortSignal.timeout(8_000),
+      });
+      if (!res.ok) return null;
+      return res.json() as Promise<User>;
+    } catch {
+      return null;
+    }
   }, []);
 
   useEffect(() => {

@@ -5,3 +5,6 @@ data/*.db
 downloads/*
 !downloads/.gitkeep
 .env
+uploads/
+geracoes/
+fontes_verdade/cache_state.json

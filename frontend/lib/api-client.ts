@@ -11,6 +11,11 @@ import type {
   PerguntaContratacao,
   PesquisaCreatePayload,
   PesquisaDetalhe,
+  PlanoInvestigacao,
+  EvidenciaPlano,
+  ConhecimentoCard,
+  ResumoLacunasPlano,
+  CampanhaPesquisaPrecos,
 } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -50,8 +55,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!response.ok) {
-    const corpo = await response.text();
-    throw new Error(`${response.status} ${response.statusText}: ${corpo}`);
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.detail ?? `${response.status} ${response.statusText}`);
+    }
+    if (response.status >= 500) {
+      throw new Error(`O backend retornou erro ${response.status}. Consulte o log do backend para ver a causa.`);
+    }
+    throw new Error(`${response.status} ${response.statusText}`);
   }
 
   return response.json() as Promise<T>;
@@ -103,6 +115,25 @@ export function getGeracaoETP(pesquisaId: number, tipo = "etp"): Promise<Geracao
 export function getUrlDownloadETP(pesquisaId: number, tipo = "etp"): string {
   const token = getToken();
   return `${API_URL}/pesquisas/${pesquisaId}/etp/download?tipo=${tipo}${token ? `&token=${token}` : ""}`;
+}
+
+export function gerarDocumentoContratacao(
+  contratacaoId: number,
+  payload: GeracaoCreatePayload,
+): Promise<GeracaoCreateResponse> {
+  return request<GeracaoCreateResponse>(`/contratacoes/${contratacaoId}/documentos`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getDocumentoContratacao(contratacaoId: number, tipo = "etp"): Promise<Geracao> {
+  return request<Geracao>(`/contratacoes/${contratacaoId}/documentos?tipo=${tipo}`);
+}
+
+export function getUrlDocumentoContratacao(contratacaoId: number, tipo = "etp"): string {
+  const token = getToken();
+  return `${API_URL}/contratacoes/${contratacaoId}/documentos/download?tipo=${tipo}${token ? `&token=${token}` : ""}`;
 }
 
 // Auth
@@ -233,8 +264,14 @@ export function responderPergunta(
   );
 }
 
-export function processarBase(id: number): Promise<void> {
-  return request<void>(`/contratacoes/${id}/processar-base`, { method: "POST" });
+export function processarBase(id: number): Promise<{ detail: string; perguntas_adicionais?: number }> {
+  return request<{ detail: string; perguntas_adicionais?: number }>(
+    `/contratacoes/${id}/processar-base`, { method: "POST" },
+  );
+}
+
+export function aprofundarInvestigacao(id: number): Promise<{ detail: string; perguntas_adicionais: number }> {
+  return request(`/contratacoes/${id}/aprofundar-investigacao`, { method: "POST" });
 }
 
 export function validarEvidencia(
@@ -249,6 +286,117 @@ export function validarEvidencia(
   });
 }
 
+export function revisarRecomendacao(
+  contratacaoId: number,
+  idx: number,
+  decisao: "executar" | "dispensar",
+): Promise<BaseConhecimento> {
+  return request<BaseConhecimento>(`/contratacoes/${contratacaoId}/bcc/recomendacoes`, {
+    method: "PATCH",
+    body: JSON.stringify({ idx, decisao }),
+  });
+}
+
 export function getEstatisticasTokens(): Promise<EstatisticasTokensOut> {
   return request<EstatisticasTokensOut>("/contratacoes/estatisticas/tokens");
+}
+
+export function getPlanoInvestigacao(id: number): Promise<PlanoInvestigacao> {
+  return request<PlanoInvestigacao>(`/contratacoes/${id}/plano`);
+}
+
+export function coletarPlano(id: number): Promise<void> {
+  return request<void>(`/contratacoes/${id}/plano/coletar`, { method: "POST" });
+}
+
+export function getLacunasPlano(id: number): Promise<ResumoLacunasPlano> {
+  return request<ResumoLacunasPlano>(`/contratacoes/${id}/plano/lacunas`);
+}
+
+export function getEvidenciasPlano(id: number): Promise<EvidenciaPlano[]> {
+  return request<EvidenciaPlano[]>(`/contratacoes/${id}/plano/evidencias`);
+}
+
+export function validarEvidenciaPlano(
+  contratacaoId: number,
+  evidenciaId: number,
+  statusValidacao: "pendente" | "confirmada" | "rejeitada",
+): Promise<EvidenciaPlano> {
+  return request<EvidenciaPlano>(
+    `/contratacoes/${contratacaoId}/plano/evidencias/${evidenciaId}`,
+    { method: "PATCH", body: JSON.stringify({ status_validacao: statusValidacao }) },
+  );
+}
+
+export function vincularCriteriosEvidencia(
+  contratacaoId: number,
+  evidenciaId: number,
+  criterios: string[],
+): Promise<EvidenciaPlano> {
+  return request<EvidenciaPlano>(
+    `/contratacoes/${contratacaoId}/plano/evidencias/${evidenciaId}/criterios`,
+    { method: "PUT", body: JSON.stringify({ criterios }) },
+  );
+}
+
+export function gerarConhecimentosPlano(id: number): Promise<ConhecimentoCard[]> {
+  return request<ConhecimentoCard[]>(`/contratacoes/${id}/plano/conhecimentos`, { method: "POST" });
+}
+
+export function getConhecimentosPlano(id: number): Promise<ConhecimentoCard[]> {
+  return request<ConhecimentoCard[]>(`/contratacoes/${id}/plano/conhecimentos`);
+}
+
+export function revisarConhecimentoPlano(
+  contratacaoId: number,
+  conhecimentoId: number,
+  status: "aprovado" | "rejeitado",
+): Promise<ConhecimentoCard> {
+  return request<ConhecimentoCard>(
+    `/contratacoes/${contratacaoId}/plano/conhecimentos/${conhecimentoId}`,
+    { method: "PATCH", body: JSON.stringify({ status }) },
+  );
+}
+
+export function consolidarBccPlano(id: number): Promise<BaseConhecimento> {
+  return request<BaseConhecimento>(`/contratacoes/${id}/plano/consolidar-bcc`, { method: "POST" });
+}
+
+export function revisarDispensaCard(
+  contratacaoId: number,
+  planoCardId: number,
+  decisao: "aprovar" | "rejeitar",
+): Promise<PlanoInvestigacao> {
+  return request<PlanoInvestigacao>(
+    `/contratacoes/${contratacaoId}/plano/cards/${planoCardId}/dispensa`,
+    { method: "PATCH", body: JSON.stringify({ decisao }) },
+  );
+}
+
+export function iniciarPesquisaPrecos(id: number): Promise<{ campanha_id: number; status: string }> {
+  return request(`/contratacoes/${id}/pesquisa-precos`, { method: "POST" });
+}
+
+export function getPesquisaPrecos(id: number): Promise<CampanhaPesquisaPrecos> {
+  return request(`/contratacoes/${id}/pesquisa-precos`);
+}
+
+export function expandirPesquisaPrecos(id: number, quantidade = 3): Promise<void> {
+  return request(`/contratacoes/${id}/pesquisa-precos/expandir`, {
+    method: "POST", body: JSON.stringify({ quantidade }),
+  });
+}
+
+export function revisarObservacaoPreco(
+  contratacaoId: number, observacaoId: number, comparavel: boolean,
+): Promise<CampanhaPesquisaPrecos> {
+  return request(`/contratacoes/${contratacaoId}/pesquisa-precos/observacoes/${observacaoId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ comparavel, status_validacao: comparavel ? "confirmada" : "rejeitada",
+      motivo_exclusao: comparavel ? null : "Excluída na revisão humana" }),
+  });
+}
+
+export function aprovarPesquisaPrecos(id: number): Promise<CampanhaPesquisaPrecos> {
+  return request(`/contratacoes/${id}/pesquisa-precos/aprovar`, { method: "POST" });
 }

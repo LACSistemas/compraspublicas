@@ -15,39 +15,43 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { gerarETP, getGeracaoETP, getUrlDownloadETP } from "@/lib/api-client";
+import { gerarDocumentoContratacao, gerarETP, getDocumentoContratacao, getGeracaoETP, getUrlDocumentoContratacao, getUrlDownloadETP } from "@/lib/api-client";
 import type { Geracao, StatusGeracao } from "@/lib/types";
 
 interface Props {
-  pesquisaId: number;
+  pesquisaId?: number;
+  contratacaoId?: number;
 }
 
-export function EtpGeracaoCard({ pesquisaId }: Props) {
+export function EtpGeracaoCard({ pesquisaId, contratacaoId }: Props) {
   const [geracao, setGeracao] = useState<Geracao | null>(null);
-  const [carregandoStatus, setCarregandoStatus] = useState(true);
   const [disparando, setDisparando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const [tipo, setTipo] = useState<"etp" | "tr">("etp");
+  const [tipo, setTipo] = useState<"dfd" | "etp" | "mapa_riscos" | "tr">("etp");
   const [unGestora, setUnGestora] = useState("");
   const [responsaveis, setResponsaveis] = useState("");
   const [objetoResumido, setObjetoResumido] = useState("");
 
   useEffect(() => {
-    getGeracaoETP(pesquisaId, tipo)
+    const obter = contratacaoId
+      ? getDocumentoContratacao(contratacaoId, tipo)
+      : getGeracaoETP(pesquisaId!, tipo);
+    obter
       .then(setGeracao)
-      .catch(() => setGeracao(null))
-      .finally(() => setCarregandoStatus(false));
-  }, [pesquisaId, tipo]);
+      .catch(() => setGeracao(null));
+  }, [pesquisaId, contratacaoId, tipo]);
 
   useEffect(() => {
     if (!geracao || geracao.status === "completo" || geracao.status === "erro") return;
     const interval = setInterval(() => {
-      getGeracaoETP(pesquisaId, geracao.tipo)
+      (contratacaoId
+        ? getDocumentoContratacao(contratacaoId, geracao.tipo)
+        : getGeracaoETP(pesquisaId!, geracao.tipo))
         .then(setGeracao)
         .catch(() => {});
     }, 3000);
     return () => clearInterval(interval);
-  }, [geracao, pesquisaId]);
+  }, [geracao, pesquisaId, contratacaoId]);
 
   async function handleGerar() {
     if (!unGestora.trim() || !responsaveis.trim()) {
@@ -57,13 +61,17 @@ export function EtpGeracaoCard({ pesquisaId }: Props) {
     setErro(null);
     setDisparando(true);
     try {
-      await gerarETP(pesquisaId, {
+      const payload = {
         tipo,
         un_gestora: unGestora,
         responsaveis,
         objeto_resumido: objetoResumido || null,
-      });
-      const novaGeracao = await getGeracaoETP(pesquisaId, tipo);
+      };
+      if (contratacaoId) await gerarDocumentoContratacao(contratacaoId, payload);
+      else await gerarETP(pesquisaId!, payload);
+      const novaGeracao = contratacaoId
+        ? await getDocumentoContratacao(contratacaoId, tipo)
+        : await getGeracaoETP(pesquisaId!, tipo);
       setGeracao(novaGeracao);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro ao iniciar geração.");
@@ -104,10 +112,12 @@ export function EtpGeracaoCard({ pesquisaId }: Props) {
               <select
                 id="tipo-doc"
                 value={tipo}
-                onChange={(e) => setTipo(e.target.value as "etp" | "tr")}
+                onChange={(e) => setTipo(e.target.value as "dfd" | "etp" | "mapa_riscos" | "tr")}
                 className="w-48 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
               >
+                <option value="dfd">DFD — Documento de Formalização da Demanda</option>
                 <option value="etp">ETP — Estudo Técnico Preliminar</option>
+                <option value="mapa_riscos">Mapa de Riscos</option>
                 <option value="tr">TR — Termo de Referência (PGE)</option>
               </select>
             </div>
@@ -185,7 +195,9 @@ export function EtpGeracaoCard({ pesquisaId }: Props) {
 
             {geracao.arquivo_disponivel && (
               <a
-                href={getUrlDownloadETP(pesquisaId, geracao.tipo)}
+                href={contratacaoId
+                  ? getUrlDocumentoContratacao(contratacaoId, geracao.tipo)
+                  : getUrlDownloadETP(pesquisaId!, geracao.tipo)}
                 download
                 className="self-start"
               >
@@ -202,7 +214,6 @@ export function EtpGeracaoCard({ pesquisaId }: Props) {
               className="self-start text-muted-foreground"
               onClick={() => {
                 setGeracao(null);
-                setCarregandoStatus(false);
               }}
             >
               Gerar novo

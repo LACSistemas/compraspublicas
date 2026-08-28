@@ -7,9 +7,11 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { DadosBCC, RiscoBCC } from "@/lib/types";
+import { revisarRecomendacao } from "@/lib/api-client";
 
 interface Props {
   dados: DadosBCC;
+  contratacaoId: number;
 }
 
 function badgePrioridade(p: "alta" | "média" | "baixa") {
@@ -86,7 +88,7 @@ function AbaRiscosDetalhado({ riscos }: { riscos: RiscoBCC[] }) {
   );
 }
 
-export function AnaliseIaCard({ dados }: Props) {
+export function AnaliseIaCard({ dados, contratacaoId }: Props) {
   const fundamentacoes = dados.fundamentacoes ?? [];
   const robustezMedia =
     fundamentacoes.length > 0
@@ -97,6 +99,27 @@ export function AnaliseIaCard({ dados }: Props) {
       : 0;
 
   const [expandidos, setExpandidos] = useState<Set<number>>(new Set());
+  const [statusRecomendacoes, setStatusRecomendacoes] = useState<Record<number, string>>(
+    () => Object.fromEntries((dados.recomendacoes ?? []).map((item, idx) => [idx, item.status ?? "pendente"])),
+  );
+  const [recomendacaoEmAndamento, setRecomendacaoEmAndamento] = useState<number | null>(null);
+  const [erroRecomendacao, setErroRecomendacao] = useState<string | null>(null);
+
+  async function decidirRecomendacao(idx: number, decisao: "executar" | "dispensar") {
+    setRecomendacaoEmAndamento(idx);
+    setErroRecomendacao(null);
+    try {
+      await revisarRecomendacao(contratacaoId, idx, decisao);
+      setStatusRecomendacoes((atual) => ({
+        ...atual,
+        [idx]: decisao === "executar" ? "executada" : "dispensada",
+      }));
+    } catch (error) {
+      setErroRecomendacao(error instanceof Error ? error.message : "Falha ao registrar a decisão");
+    } finally {
+      setRecomendacaoEmAndamento(null);
+    }
+  }
   function toggleExpandido(i: number) {
     setExpandidos((prev) => {
       const next = new Set(prev);
@@ -134,7 +157,7 @@ export function AnaliseIaCard({ dados }: Props) {
           ].map(({ label, value }) => (
             <div key={label} className="rounded-lg border border-border px-3 py-2">
               <p className="text-xs text-muted-foreground">{label}</p>
-              <p className="text-sm font-medium mt-0.5">{value}</p>
+              <div className="text-sm font-medium mt-0.5">{value}</div>
             </div>
           ))}
         </div>
@@ -277,6 +300,7 @@ export function AnaliseIaCard({ dados }: Props) {
           </TabsContent>
 
           <TabsContent value="recomendacoes" className="mt-4">
+            {erroRecomendacao && <p className="mb-3 text-sm text-destructive">{erroRecomendacao}</p>}
             {(dados.recomendacoes ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhuma recomendação.</p>
             ) : (
@@ -285,13 +309,22 @@ export function AnaliseIaCard({ dados }: Props) {
                   <Card key={r.id ?? i} className="text-sm">
                     <CardContent className="pt-4 flex flex-col gap-2">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium">{r.descricao}</p>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ação proposta</p>
+                          <p className="font-medium mt-1">{r.descricao}</p>
+                        </div>
                         {badgePrioridade(r.prioridade)}
                       </div>
-                      <p className="text-xs text-muted-foreground">Motivo: {r.motivo}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Benefício esperado: {r.beneficio_esperado}
-                      </p>
+                      <div className="grid gap-2 sm:grid-cols-2 mt-1">
+                        <div className="rounded-md bg-muted/50 p-3">
+                          <p className="text-xs font-semibold">Por que isso importa</p>
+                          <p className="text-xs text-muted-foreground mt-1">{r.motivo}</p>
+                        </div>
+                        <div className="rounded-md bg-muted/50 p-3">
+                          <p className="text-xs font-semibold">Resultado esperado</p>
+                          <p className="text-xs text-muted-foreground mt-1">{r.beneficio_esperado}</p>
+                        </div>
+                      </div>
                       {r.risco_reduzido && (
                         <p className="text-xs text-muted-foreground">
                           Risco reduzido: {r.risco_reduzido}
@@ -309,14 +342,24 @@ export function AnaliseIaCard({ dados }: Props) {
                           ))}
                         </div>
                       )}
-                      <div className="flex gap-2 mt-1">
-                        <button className="text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium">
-                          Executar
-                        </button>
-                        <button className="text-xs px-3 py-1.5 rounded-md border border-border hover:bg-muted transition-colors">
-                          Dispensar
-                        </button>
-                      </div>
+                      {statusRecomendacoes[i] === "pendente" ? (
+                        <div className="flex gap-2 mt-1">
+                          <button type="button" disabled={recomendacaoEmAndamento !== null}
+                            onClick={() => void decidirRecomendacao(i, "executar")}
+                            className="text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium disabled:opacity-50">
+                            {recomendacaoEmAndamento === i ? "Salvando…" : "Incorporar aos documentos"}
+                          </button>
+                          <button type="button" disabled={recomendacaoEmAndamento !== null}
+                            onClick={() => void decidirRecomendacao(i, "dispensar")}
+                            className="text-xs px-3 py-1.5 rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-50">
+                            Não incorporar
+                          </button>
+                        </div>
+                      ) : (
+                        <Badge variant="outline" className="w-fit mt-1">
+                          {statusRecomendacoes[i] === "executada" ? "Execução aprovada" : "Dispensada"}
+                        </Badge>
+                      )}
                     </CardContent>
                   </Card>
                 ))}

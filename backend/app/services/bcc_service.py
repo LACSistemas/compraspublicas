@@ -6,6 +6,7 @@ import threading
 from app.database import SessionLocal
 from app.models import BaseConhecimento, Contratacao, HistoricoContratacao, PerguntaContratacao
 from app.services.gemini_service import chamar_gemini, salvar_uso_tokens
+from app.services.pesquisa_precos_service import obter_pacote_disponivel
 
 logger = logging.getLogger("bcc_service")
 
@@ -51,20 +52,29 @@ def _job_processar_bcc(contratacao_id: int):
             perguntas_e_respostas=_montar_qa(perguntas),
         )
 
+        pesquisa_precos = obter_pacote_disponivel(db, contratacao_id)
+        if pesquisa_precos:
+            prompt += ("\n\nPESQUISA DE MERCADO E PREÇOS RASTREÁVEL:\n" +
+                json.dumps(pesquisa_precos, ensure_ascii=False) +
+                "\nUse as referências apenas como comparáveis externos. Não trate requisitos, "
+                "quantidades ou condições de outros órgãos como fatos desta contratação.")
+
         dados, token_info = chamar_gemini(prompt)
+        if pesquisa_precos:
+            dados["pesquisa_precos"] = pesquisa_precos
 
         metricas = dados.get("metricas", {})
         progresso = metricas.get("progresso_pct", 0)
         maturidade = metricas.get("nivel_maturidade", "Insuficiente")
 
-        bcc = BaseConhecimento(
-            contratacao_id=contratacao_id,
-            dados_json=json.dumps(dados, ensure_ascii=False),
-            progresso_pct=progresso,
-            nivel_maturidade=maturidade,
-            modelo_gemini=token_info.modelo,
-        )
-        db.add(bcc)
+        bcc = db.query(BaseConhecimento).filter_by(contratacao_id=contratacao_id).first()
+        if bcc is None:
+            bcc = BaseConhecimento(contratacao_id=contratacao_id)
+            db.add(bcc)
+        bcc.dados_json = json.dumps(dados, ensure_ascii=False)
+        bcc.progresso_pct = progresso
+        bcc.nivel_maturidade = maturidade
+        bcc.modelo_gemini = token_info.modelo
 
         salvar_uso_tokens(db, contratacao.usuario_id, "bcc_contratacao", token_info, contratacao_id)
 

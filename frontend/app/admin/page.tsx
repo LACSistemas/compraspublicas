@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function AdminPage() {
   return (
@@ -45,7 +46,7 @@ function AdminPanel() {
               Gerencie usuários e monitore o consumo de tokens
             </p>
           </div>
-          <Button variant="outline" size="sm" render={<a href="/" />}>
+          <Button nativeButton={false} variant="outline" size="sm" render={<Link href="/" />}>
             Voltar ao sistema
           </Button>
         </div>

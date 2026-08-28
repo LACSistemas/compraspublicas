@@ -32,7 +32,7 @@ function PesquisasContent() {
     <div className="flex flex-1 flex-col gap-6 p-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Pesquisas</h1>
-        <Button render={<Link href="/nova-pesquisa">Nova Pesquisa</Link>} />
+        <Button nativeButton={false} render={<Link href="/nova-pesquisa">Nova Pesquisa</Link>} />
       </div>
       {loading && <p className="text-sm text-muted-foreground">Carregando...</p>}
       {erro && <p className="text-sm text-destructive">{erro}</p>}

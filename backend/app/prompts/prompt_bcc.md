@@ -9,7 +9,7 @@ Você é um analista sênior de contratações públicas, com especialização e
 - **Número do processo / DFD:** {processo}
 - **Contexto inicial:** {contexto}
 
-## RESPOSTAS DO GESTOR ÀS 25 PERGUNTAS DE INVESTIGAÇÃO
+## RESPOSTAS DO GESTOR ÀS PERGUNTAS DE INVESTIGAÇÃO
 
 {perguntas_e_respostas}
 
@@ -147,7 +147,7 @@ Responda **APENAS** com um objeto JSON válido, sem texto adicional, sem coment�
     {{
       "timestamp": "data e hora atual no formato ISO 8601",
       "usuario": "Sistema",
-      "acao": "Base de Conhecimento gerada pela IA a partir de 25 respostas do gestor",
+      "acao": "Base de Conhecimento gerada pela IA a partir das respostas do gestor",
       "detalhe": "Objeto: {objeto} | Órgão: {orgao}"
     }}
   ]

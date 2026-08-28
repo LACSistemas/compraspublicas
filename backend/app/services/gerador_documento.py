@@ -24,6 +24,37 @@ def gerar_tr(conteudo: dict, destino: str) -> str:
     return destino
 
 
+def gerar_documento_generico(conteudo: dict, destino: str, titulo: str) -> str:
+    from docx import Document
+
+    doc = Document()
+    doc.add_heading(titulo, level=0)
+    for chave, valor in conteudo.items():
+        if chave in {"pendencias", "rastreabilidade_secoes"}:
+            continue
+        doc.add_heading(chave.replace("_", " ").upper(), level=1)
+        if isinstance(valor, list):
+            for item in valor:
+                doc.add_paragraph(str(item), style="List Bullet")
+        elif isinstance(valor, dict):
+            for item_chave, item_valor in valor.items():
+                doc.add_paragraph(f"{item_chave}: {item_valor}")
+        else:
+            doc.add_paragraph(str(valor))
+    rastreabilidade = conteudo.get("rastreabilidade_secoes", {})
+    if rastreabilidade:
+        doc.add_heading("RASTREABILIDADE", level=1)
+        for secao, cards in rastreabilidade.items():
+            doc.add_paragraph(f"{secao}: {', '.join(cards)}")
+    pendencias = conteudo.get("pendencias", [])
+    if pendencias:
+        doc.add_heading("PENDÊNCIAS PARA REVISÃO", level=1)
+        for pendencia in pendencias:
+            doc.add_paragraph(str(pendencia), style="List Bullet")
+    doc.save(destino)
+    return destino
+
+
 def gerar_tr_provisorio(conteudo: dict, destino: str) -> str:
     from docx import Document
     from docx.shared import Pt

@@ -28,7 +28,7 @@ def upgrade() -> None:
     sa.Column('hashed_password', sa.String(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('is_owner', sa.Boolean(), nullable=False),
-    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_usuarios_email'), 'usuarios', ['email'], unique=True)
@@ -43,8 +43,8 @@ def upgrade() -> None:
     sa.Column('erro_mensagem', sa.Text(), nullable=True),
     sa.Column('resultado_json', sa.Text(), nullable=True),
     sa.Column('pasta_downloads', sa.String(), nullable=True),
-    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('atualizado_em', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
+    sa.Column('atualizado_em', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['usuario_id'], ['usuarios.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -58,7 +58,7 @@ def upgrade() -> None:
     sa.Column('tokens_total', sa.Integer(), nullable=True),
     sa.Column('modelo', sa.String(), nullable=True),
     sa.Column('referencia_id', sa.Integer(), nullable=True),
-    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['usuario_id'], ['usuarios.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -70,8 +70,8 @@ def upgrade() -> None:
     sa.Column('erro_mensagem', sa.Text(), nullable=True),
     sa.Column('resultado_json', sa.Text(), nullable=True),
     sa.Column('modelo_gemini', sa.String(), nullable=True),
-    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('atualizado_em', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
+    sa.Column('atualizado_em', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['pesquisa_id'], ['pesquisas.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -85,8 +85,8 @@ def upgrade() -> None:
     sa.Column('resultado_json', sa.Text(), nullable=True),
     sa.Column('arquivo_gerado', sa.String(), nullable=True),
     sa.Column('modelo_gemini', sa.String(), nullable=True),
-    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('atualizado_em', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('criado_em', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
+    sa.Column('atualizado_em', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=True),
     sa.ForeignKeyConstraint(['pesquisa_id'], ['pesquisas.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

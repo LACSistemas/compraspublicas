@@ -27,6 +27,7 @@ export default function ContratacaoesPage() {
 
 const LABEL_STATUS: Record<StatusContratacao, string> = {
   cadastro: "Cadastro",
+  gerando_plano: "Gerando plano…",
   gerando_perguntas: "Gerando perguntas…",
   investigacao: "Em investigação",
   processando_bcc: "Processando BCC…",
@@ -42,7 +43,7 @@ function BadgeStatus({ status }: { status: StatusContratacao }) {
       </Badge>
     );
   }
-  if (status === "gerando_perguntas" || status === "processando_bcc") {
+  if (status === "gerando_plano" || status === "gerando_perguntas" || status === "processando_bcc") {
     return (
       <Badge variant="outline" className="text-amber-600 border-amber-300">
         {LABEL_STATUS[status]}
@@ -83,7 +84,7 @@ function ContratacaoesContent() {
             Processos em fase preparatória
           </p>
         </div>
-        <Button render={<Link href="/contratacoes/nova">Nova Contratação</Link>} />
+        <Button nativeButton={false} render={<Link href="/contratacoes/nova">Nova Contratação</Link>} />
       </div>
 
       {/* Estatísticas de tokens do usuário */}

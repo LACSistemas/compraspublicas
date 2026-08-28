@@ -1,0 +1,44 @@
+{
+  "termo_busca": "cafe",
+  "processos": [
+    {
+      "url": "https://example.invalid/processos/1",
+      "numero_processo": "001/2026",
+      "situacao": "Publicado",
+      "comprador": "Órgão de Teste",
+      "modalidade": "Pregão eletrônico",
+      "objeto": "Aquisição de café para fixture de testes",
+      "informacoes": {
+        "Legislação Aplicável": "Lei 14.133/2021"
+      },
+      "datas": {
+        "Data de Publicação": "2026-08-01T12:00:00Z"
+      },
+      "documentos": [
+        {
+          "nome": "edital_fixture.pdf",
+          "tipo": "Edital",
+          "data": "2026-08-01T12:00:00Z"
+        }
+      ],
+      "itens": [
+        {
+          "numero": "1",
+          "descricao": "Café torrado e moído",
+          "quantidade": "100",
+          "unidade": "kg"
+        }
+      ],
+      "andamento": [],
+      "arquivos_baixados": [
+        {
+          "arquivo": "edital_fixture.pdf",
+          "tamanho_bytes": 128,
+          "pasta": "fixtures"
+        }
+      ]
+    }
+  ],
+  "erro": null
+}
+

@@ -28,6 +28,7 @@ export function usePolling<T>({
 
   const fetchFnRef = useRef(fetchFn);
   const shouldStopRef = useRef(shouldStop);
+  const falhasConsecutivasRef = useRef(0);
   fetchFnRef.current = fetchFn;
   shouldStopRef.current = shouldStop;
 
@@ -39,6 +40,8 @@ export function usePolling<T>({
       try {
         const resultado = await fetchFnRef.current();
         if (cancelado) return;
+        falhasConsecutivasRef.current = 0;
+        setErro(null);
         setData(resultado);
         if (shouldStopRef.current(resultado)) {
           setParado(true);
@@ -46,8 +49,11 @@ export function usePolling<T>({
         }
       } catch (e) {
         if (cancelado) return;
-        setErro(e instanceof Error ? e : new Error(String(e)));
-        setParado(true);
+        falhasConsecutivasRef.current += 1;
+        if (falhasConsecutivasRef.current >= 3) {
+          setErro(e instanceof Error ? e : new Error(String(e)));
+        }
+        timeoutId = setTimeout(tick, Math.min(intervalMs * falhasConsecutivasRef.current, 10_000));
         return;
       }
       timeoutId = setTimeout(tick, intervalMs);
